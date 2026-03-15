@@ -1,19 +1,19 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import date
-from typing import Optional
+from typing import Optional, List
 
 @dataclass
 class CurrencyRate:
-    """Бизнес-сущность курса валюты"""
     code: str
     value: float
     date: date
 
 class CurrencyRepository(ABC):
-    """Абстракция репозитория - порт в доменном слое"""
-    
     @abstractmethod
     async def get_rate(self, currency_code: str, rate_date: Optional[date] = None) -> Optional[CurrencyRate]:
-        """Получить курс валюты"""
+        pass
+    
+    @abstractmethod
+    async def get_all_rates(self, rate_date: Optional[date] = None) -> List[CurrencyRate]:
         pass

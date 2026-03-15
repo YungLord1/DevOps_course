@@ -6,6 +6,7 @@ import os
 
 router = APIRouter()
 
+# Инициализация
 cbr_url = os.getenv('CBR_URL', 'http://www.cbr.ru/scripts/XML_daily.asp')
 repository = CbrRepository(cbr_url)
 use_case = GetCurrencyRateUseCase(repository)
@@ -15,7 +16,7 @@ async def info():
     return {
         'version': os.getenv('VERSION', '1.0.0'),
         'service': os.getenv('SERVICE', 'currency'),
-        'author': os.getenv('AUTHOR', 'i.chach')
+        'author': os.getenv('AUTHOR', 'i.ivanov')
     }
 
 @router.get('/info/currency')
@@ -23,9 +24,7 @@ async def currency_rate(
     currency: str = Query(None),
     date: str = Query(None)
 ):
-    if not currency:
-        return {'data': {}, 'service': 'currency'}
-    
+    # Парсим дату
     rate_date = None
     if date:
         try:
@@ -33,10 +32,16 @@ async def currency_rate(
         except:
             return {'data': {}, 'service': 'currency'}
     
-    try:
-        rate = await use_case.execute(currency, rate_date)
-    except:
-        return {'data': {}, 'service': 'currency'}
+    # Если валюты нет - возвращаем все
+    if not currency:
+        rates = await use_case.get_all_rates(rate_date)
+        return {
+            'data': {rate.code: rate.value for rate in rates},
+            'service': 'currency'
+        }
+    
+    # Иначе одну валюту
+    rate = await use_case.execute(currency, rate_date)
     
     if not rate:
         return {'data': {}, 'service': 'currency'}

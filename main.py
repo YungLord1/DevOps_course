@@ -5,12 +5,7 @@ import os
 
 load_dotenv()
 
-app = FastAPI(
-    title="Currency Parser API",
-    description="Clean аrchitecture: Domain → Application → Infrastructure → Presentation",
-    version="0.1.0"
-)
-
+app = FastAPI(title="Currency Parser API")
 app.include_router(router)
 
 if __name__ == "__main__":

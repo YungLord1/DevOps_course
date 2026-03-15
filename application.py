@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Optional
+from typing import Optional, List
 from domain import CurrencyRate, CurrencyRepository
 
 class GetCurrencyRateUseCase:
@@ -14,3 +14,9 @@ class GetCurrencyRateUseCase:
             return await self.repository.get_rate(currency_code.upper(), rate_date)
         except:
             return None
+    
+    async def get_all_rates(self, rate_date: Optional[date] = None) -> List[CurrencyRate]:
+        try:
+            return await self.repository.get_all_rates(rate_date)
+        except:
+            return []
