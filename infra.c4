@@ -1,0 +1,27 @@
+specification {
+  element actor
+  element system
+}
+
+model {
+  user = actor 'Клиент'
+  cbr = system 'ЦБ РФ'
+
+  presentation = system 'Presentation' 'FastAPI'
+  application = system 'Application' 'GetCurrencyUseCase' 
+  domain = system 'Domain' 'CurrencyRate + Repository порт'
+  infrastructure = system 'Infrastructure' 'CbrRepository'
+
+  user -> presentation 'запрашивает курс валюты'
+  presentation -> application 'передает запрос в бизнес-логику'
+  application -> domain 'проверяет код валюты по бизнес-правилам'
+  application -> infrastructure 'просит сходить в ЦБ за курсом'
+  infrastructure -> cbr 'делает HTTP-запрос'
+}
+
+views {
+  view index {
+    title 'Currency Parser - 4 слоя'
+    include *
+  }
+}
