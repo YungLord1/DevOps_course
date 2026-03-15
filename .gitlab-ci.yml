@@ -1,0 +1,10 @@
+include:
+  - project: education/devops/automation/ci
+    ref: master
+    file: ci.yml
+variables:
+  VERSION: "1.0.0"
+  SERVICE: "currency"
+  AUTHOR: "i.chach"
+  PORT: "8000"
+  CBR_URL: "http://www.cbr.ru/scripts/XML_daily.asp"

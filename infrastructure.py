@@ -30,7 +30,7 @@ class CbrRepository(CurrencyRepository):
                 
                 for valute in root.findall('Valute'):
                     if valute.find('CharCode').text == currency_code:
-                        value_str = valute.find('Value').text.replace(',', '.')
+                        value_str = valute.find('VunitRate').text.replace(',', '.')
                         value = float(value_str)
                         
                         return CurrencyRate(
