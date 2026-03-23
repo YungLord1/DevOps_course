@@ -5,10 +5,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY pyproject.toml .
+COPY requirements.txt
 RUN apk update && apk upgrade --no-cache && \
     pip install --upgrade pip --no-cache-dir && \ 
-    pip install --no-cache-dir .
+    pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
