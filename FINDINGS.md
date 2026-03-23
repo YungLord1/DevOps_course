@@ -8,7 +8,7 @@
 2. Добавил команду RUN apk update && apk upgrade --no-cache для обновления пакетов alpine до последних версий
 3. Обновил менеджер пакетов для python до последней версии: RUN pip install --upgrade pip
 4. Объединил все RUN в один: RUN apk update && apk upgrade --no-cache &&  \
-          pip install --upgrade pip —no-cache-dir && \
+          pip install --no-cache-dir --upgrade pip==25.0.1 && \
           pip install --no-cache-dir .
 
 На этом отчет хацкера закончен, спасибо за внимание! :) (◣_◢)
