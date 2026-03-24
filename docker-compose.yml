@@ -4,7 +4,7 @@ services:
  currency-app:
     build: .
     container_name: currency-app
-    user: "0:0"
+    user: "1001:1001"
     read_only: true
     env_file:
       - .env
