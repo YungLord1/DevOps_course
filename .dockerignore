@@ -1,0 +1,9 @@
+*.md
+*.json
+.gitignore
+CODEOWNERS
+*.c4
+Dockerfile
+docker-compose.yml
+.env.example
+.gitlab-ci.yml
