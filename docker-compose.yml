@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+ currency-app:
+    build: .
+    container_name: currency-app
+    user: "1001:1001"
+    read_only: true
+    env_file:
+      - .env
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 256m
+    cpus: "0.5"
+    networks:
+      - currency-net
+    ports:
+      - "${PORT:-8000}:8000"
+    restart: unless-stopped
+
+networks:
+  currency-net:
+    driver: bridge
