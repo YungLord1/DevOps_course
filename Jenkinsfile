@@ -27,8 +27,9 @@ pipeline {
             steps {
                 echo 'Start unit tests...'
                 sh '''
+                    python3 -m venv venv
                     . venv/bin/activate
-                    pip install pytest pytest-asyncio httpx fastapi
+                    pip install -r requirements.txt
                     pytest test_unit.py --junitxml=unit_report.xml
                 '''
             }
