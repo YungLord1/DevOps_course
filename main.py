@@ -3,14 +3,14 @@ from presentation import router
 from dotenv import load_dotenv
 import os
 
-#Загрузка переменных окружения
+# Загрузка переменных окружения
 load_dotenv()
 
-#Основное приложение fastapi + подключаем эндпоинты
+# Основное приложение fastapi + подключаем эндпоинты
 app = FastAPI(title="Currency Parser API")
 app.include_router(router)
 
-#main, подтягиваем порт из переменной окружения
+# main, подтягиваем порт из переменной окружения
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv('PORT', '8000'))
