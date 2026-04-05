@@ -54,7 +54,7 @@ pipeline {
         stage('Deploy') {
             agent { label 'worker2' }
             options {
-                timeout(time: 10, unit: 'MINUTES')
+                timeout(time: 48, unit: 'HOURS')
             }
             input{
                 message 'Do u want to deploy?'
@@ -68,10 +68,6 @@ pipeline {
                 withCredentials([file(credentialsId: 'ENV_FILE', variable: 'SECRET_FILE_PATH')]) {
                     sh '''
                         echo "Deploy image: $IMAGE_NAME"
-                        if [ -z "$IMAGE_NAME" ] || [ "$IMAGE_NAME" = "null" ]; then
-                        echo "ОШИБКА: Имя образа потерялось!"
-                        exit 1
-                        fi
                         docker compose --env-file "$SECRET_FILE_PATH" down --remove-orphans
                         docker compose --env-file "$SECRET_FILE_PATH" up -d
                     '''
@@ -88,7 +84,6 @@ pipeline {
                     pip install -r requirements.txt
                     pytest test_currency_app.py --junitxml=integration_report.xml
                 '''
-                sleep 3
             }
         }
     }
