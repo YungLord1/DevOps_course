@@ -7,6 +7,10 @@ pipeline {
     options {
         timestamps()
         buildDiscarder(logRotator(numToKeepStr: '5'))
+        gitLabConnection('gitlab-server')
+    }
+    triggers {
+        gitlab(triggerOnPush: true, triggerOnMergeRequest: true, branchFilterType: 'All')
     }
     stages {
         stage('Lint') {
@@ -89,9 +93,11 @@ pipeline {
             }
         }
         success {
+            updateGitlabCommitStatus(name: 'jenkins', state: 'success')
             echo 'Pipeline finished successfully'
         }
         failure {
+            updateGitlabCommitStatus(name: 'jenkins', state: 'failed')
             echo 'Pipeline failed'
         }
     }
