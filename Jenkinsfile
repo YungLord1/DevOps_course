@@ -53,6 +53,13 @@ pipeline {
         }
         stage('Deploy') {
             agent { label 'worker2' }
+            options {
+                timeout(time: 10, unit: 'MINUTES')
+            }
+            input{
+                message 'Do u want to deploy?'
+                ok 'Deploy now'
+            }
             environment {
                 IMAGE_NAME = "${env.DEPLOY_TAG}"
             }
