@@ -53,6 +53,9 @@ pipeline {
         }
         stage('Deploy') {
             agent { label 'worker2' }
+            when {
+                branch 'master'
+            }
             options {
                 timeout(time: 48, unit: 'HOURS')
             }
@@ -76,6 +79,9 @@ pipeline {
         }
         stage('Integration_tests') {
             agent { label 'worker1' }
+            when {
+                branch 'master'
+            }
             steps {
                 echo 'Running tests...'
                 sh '''
