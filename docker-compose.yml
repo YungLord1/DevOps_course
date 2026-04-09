@@ -2,12 +2,12 @@ version: '3.8'
 
 services:
  currency-app:
-    build: .
+    image: ${IMAGE_NAME}
     container_name: currency-app
     user: "1001:1001"
     read_only: true
-    env_file:
-      - .env
+    # env_file:
+    #   - .env
     security_opt:
       - no-new-privileges:true
     cap_drop:
