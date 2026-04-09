@@ -55,6 +55,7 @@ pipeline {
             agent { label 'worker2' }
             when {
                 branch 'master'
+                beforInput true
             }
             options {
                 timeout(time: 48, unit: 'HOURS')
