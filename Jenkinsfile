@@ -34,9 +34,9 @@ pipeline {
                     python3 -m venv venv
                     . venv/bin/activate
                     pip install -r requirements.txt
-                    export PYTHONPATH=$PYTHONPATH:$(pwd)
                     pytest tests/test_unit.py --junitxml=unit_report.xml
                 '''
+                //export PYTHONPATH=$PYTHONPATH:$(pwd)
                 junit 'unit_report.xml'
             }
         }
@@ -55,10 +55,10 @@ pipeline {
         }
         stage('Deploy') {
             agent { label 'worker2' }
-            when {
-                branch 'master'
-                beforeInput true
-            }
+            // when {
+            //     branch 'master'
+            //     beforeInput true
+            // }
             options {
                 timeout(time: 48, unit: 'HOURS')
             }
@@ -82,24 +82,24 @@ pipeline {
         }
         stage('Integration_tests') {
             agent { label 'worker1' }
-            when {
-                branch 'master'
-            }
+            // when {
+            //     branch 'master'
+            // }
             steps {
                 echo 'Running tests...'
                 sh '''
                     python3 -m venv venv
                     . venv/bin/activate
                     pip install -r requirements.txt
-                    pytest test_currency_app.py --junitxml=integration_report.xml
+                    pytest tests/test_currency_app.py --junitxml=integration_report.xml
                 '''
+                junit 'integrations_report.xml'
             }
         }
     }
     post {
         always {
             node ('worker2'){
-                sh 'IMAGE_NAME=cleanup docker compose down --remove-orphans -v'
                 sh 'docker system prune -f'
             }
         }
