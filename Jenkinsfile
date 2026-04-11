@@ -74,8 +74,8 @@ pipeline {
                 withCredentials([file(credentialsId: 'ENV_FILE', variable: 'SECRET_FILE_PATH')]) {
                     sh '''
                         echo "Deploy image: $IMAGE_NAME"
-                        docker compose --env-file "$SECRET_FILE_PATH" down --remove-orphans
-                        docker compose --env-file "$SECRET_FILE_PATH" up -d
+                        IMAGE_NAME=${env.DEPLOY_TAG} docker compose --env-file "$SECRET_FILE_PATH" down --remove-orphans
+                        IMAGE_NAME=${env.DEPLOY_TAG} docker compose --env-file "$SECRET_FILE_PATH" up -d
                         sleep 8
                     '''
                 }
