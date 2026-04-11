@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 from datetime import datetime
-from application import GetCurrencyRateUseCase
-from infrastructure import CbrRepository
+from app.application import GetCurrencyRateUseCase
+from app.infrastructure import CbrRepository
 import os
 
 # Инициализируем роутер

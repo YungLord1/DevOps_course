@@ -1,6 +1,6 @@
 from datetime import date
 from typing import Optional, List
-from domain import CurrencyRate, CurrencyRepository
+from app.domain import CurrencyRate, CurrencyRepository
 
 # use_case(сценарий использования), работающий через абстраткный репозиторий
 # (бизнес-логика, класс не знает откуда данные)

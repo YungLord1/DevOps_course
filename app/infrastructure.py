@@ -2,7 +2,7 @@ import httpx
 import xml.etree.ElementTree as ET
 from datetime import date
 from typing import Optional, List
-from domain import CurrencyRate, CurrencyRepository
+from app.domain import CurrencyRate, CurrencyRepository
 
 # реализация репозитория для получения курсов валют с ЦБ РФ
 
