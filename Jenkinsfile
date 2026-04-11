@@ -93,7 +93,7 @@ pipeline {
                     pip install -r requirements.txt
                     pytest tests/test_currency_app.py --junitxml=integration_report.xml
                 '''
-                junit 'integrations_report.xml'
+                junit 'integration_report.xml'
             }
         }
     }
