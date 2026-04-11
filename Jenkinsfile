@@ -58,10 +58,6 @@ pipeline {
             options {
                 timeout(time: 48, unit: 'HOURS')
             }
-            input {
-                message 'Do u want to deploy?'
-                ok 'Deploy now'
-            }
             steps {
                 script {
                     conditionalStage(name: 'Docker Deployment', condition: env.BRANCH_NAME == 'master') {
