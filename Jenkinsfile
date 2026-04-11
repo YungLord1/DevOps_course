@@ -60,7 +60,7 @@ pipeline {
             }
             steps {
                 script {
-                    conditionalStage(name: 'Docker Deployment', condition: env.BRANCH_NAME == 'master') {
+                    conditionalStage(name: 'Deploy', condition: env.BRANCH_NAME == 'master') {
                         checkout scm
                         withCredentials([file(credentialsId: 'ENV_FILE', variable: 'SECRET_FILE_PATH')]) {
                             sh """
@@ -78,7 +78,7 @@ pipeline {
             agent { label 'worker1' }
             steps {
                 script {
-                    conditionalStage(name: 'Running Integration Tests', condition: env.BRANCH_NAME == 'master') {
+                    conditionalStage(name: 'Integration Tests', condition: env.BRANCH_NAME == 'master') {
                         echo 'Running tests...'
                         sh '''
                             python3 -m venv venv
