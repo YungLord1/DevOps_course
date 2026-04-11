@@ -95,6 +95,7 @@ pipeline {
                 }
             }
         }
+    }
     post {
         always {
             node ('worker2'){
