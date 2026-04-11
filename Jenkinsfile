@@ -91,10 +91,10 @@ pipeline {
                 sh '''
                     python3 -m venv venv
                     . venv/bin/activate
-                    pip install -r requirements.txt
+                    ./venv/bin/pip install -r requirements.txt
                 '''
                 sh 'sleep 10'
-                sh 'pytest tests/test_currency_app.py --junitxml=integration_report.xml'
+                sh './venv/bin/python3 -m pytest tests/test_currency_app.py --junitxml=integration_report.xml'
             }
         }
     }
