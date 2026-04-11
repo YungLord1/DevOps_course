@@ -81,7 +81,7 @@ pipeline {
             }
         }
         stage('Integration_tests') {
-            agent { label 'worker1' }
+            agent { label 'worker2' }
             // when {
             //     branch 'master'
             // }
