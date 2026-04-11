@@ -3,9 +3,9 @@ from datetime import date
 from unittest.mock import AsyncMock, patch
 
 # Наши модули
-from infrastructure import CbrRepository
-from domain import CurrencyRate
-from presentation import router
+from app.infrastructure import CbrRepository
+from app.domain import CurrencyRate
+from app.presentation import router
 from fastapi.testclient import TestClient
 
 # Создаем клиент для тестов FastAPI
