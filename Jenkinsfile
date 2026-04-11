@@ -87,14 +87,13 @@ pipeline {
             // }
             steps {
                 echo 'Running tests...'
-                sh 'sleep 15'
                 sh '''
                     python3 -m venv venv
                     . venv/bin/activate
                     ./venv/bin/pip install -r requirements.txt
                 '''
-                sh 'sleep 10'
                 sh './venv/bin/python3 -m pytest tests/test_currency_app.py --junitxml=integration_report.xml'
+                junit 'integration_report.xml'
             }
         }
     }
