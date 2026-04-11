@@ -6,6 +6,9 @@ services:
     container_name: currency-app
     user: "1001:1001"
     read_only: true
+    tmpfs:
+      - /tmp
+      - /app
     # env_file:
     #   - .env
     security_opt:
