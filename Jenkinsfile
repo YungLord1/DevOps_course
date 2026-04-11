@@ -34,8 +34,10 @@ pipeline {
                     python3 -m venv venv
                     . venv/bin/activate
                     pip install -r requirements.txt
+                    export PYTHONPATH=$PYTHONPATH:$(pwd)
                     pytest tests/test_unit.py --junitxml=unit_report.xml
                 '''
+                junit 'unit_report.xml'
             }
         }
         stage('Build') {
