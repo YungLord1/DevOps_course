@@ -22,7 +22,7 @@ pipeline {
                 }
                 sh 'python3 -m venv venv'
                 sh './venv/bin/pip install flake8'
-                sh './venv/bin/flake8 . --exclude=venv,.git,__pycache__,.pytest_cache'
+                sh './venv/bin/flake8 /app --exclude=venv,.git,__pycache__,.pytest_cache'
                 sleep 2
             }
         }
@@ -34,7 +34,7 @@ pipeline {
                     python3 -m venv venv
                     . venv/bin/activate
                     pip install -r requirements.txt
-                    pytest test_unit.py --junitxml=unit_report.xml
+                    pytest tests/test_unit.py --junitxml=unit_report.xml
                 '''
             }
         }
