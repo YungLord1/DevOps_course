@@ -14,7 +14,7 @@ pipeline {
     }
     stages {
         stage('Lint') {
-            agent { label 'worker1' }
+            agent { label 'staging' }
             steps {
                 echo 'Running linter...'
                 withCredentials([string(credentialsId: 'SUDO_PASS', variable: 'SUDO_PASSWORD')]) {
@@ -27,7 +27,7 @@ pipeline {
             }
         }
         stage('Unit Tests') {
-            agent { label 'worker1' }
+            agent { label 'staging' }
             steps {
                 echo 'Start unit tests...'
                 sh '''
@@ -41,7 +41,7 @@ pipeline {
             }
         }
         stage('Build') {
-            agent { label 'worker2' }
+            agent { label 'production' }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                     script {
@@ -54,7 +54,7 @@ pipeline {
             } 
         }
         stage('Deploy') {
-            agent { label 'worker2' }
+            agent { label 'production' }
             options {
                 timeout(time: 48, unit: 'HOURS')
             }
@@ -75,7 +75,7 @@ pipeline {
         }
 
         stage('Integration_tests') {
-            agent { label 'worker1' }
+            agent { label 'staging' }
             steps {
                 script {
                     conditionalStage(name: 'Integration_tests', condition: env.BRANCH_NAME == 'master') {
@@ -94,7 +94,7 @@ pipeline {
     }
     post {
         always {
-            node ('worker2'){
+            node ('production'){
                 sh 'docker system prune -f'
             }
         }
