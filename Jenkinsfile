@@ -78,7 +78,7 @@ pipeline {
             agent { label 'worker1' }
             steps {
                 script {
-                    conditionalStage(name: 'Integration Tests', condition: env.BRANCH_NAME == 'master') {
+                    conditionalStage(name: 'Integration_tests', condition: env.BRANCH_NAME == 'master') {
                         echo 'Running tests...'
                         sh '''
                             python3 -m venv venv
