@@ -62,7 +62,7 @@ def test_api_info():
 async def test_api_currency_success():
 
     mock_rate = CurrencyRate(code="USD", value=68.2892, date=date(2023, 1, 17))
-    with patch("application.GetCurrencyRateUseCase.execute",
+    with patch("app.application.GetCurrencyRateUseCase.execute",
                new_callable=AsyncMock) as mock_exe:
         mock_exe.return_value = mock_rate
 
