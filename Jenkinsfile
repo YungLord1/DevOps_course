@@ -76,6 +76,7 @@ pipeline {
                         echo "Deploy image: $IMAGE_NAME"
                         docker compose --env-file "$SECRET_FILE_PATH" down --remove-orphans
                         docker compose --env-file "$SECRET_FILE_PATH" up -d
+                        sleep 8
                     '''
                 }
             }
