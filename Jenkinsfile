@@ -76,7 +76,6 @@ pipeline {
                         echo "Deploy image: $IMAGE_NAME"
                         IMAGE_NAME=$IMAGE_NAME docker compose --env-file "$SECRET_FILE_PATH" down --remove-orphans
                         IMAGE_NAME=$IMAGE_NAME docker compose --env-file "$SECRET_FILE_PATH" up -d
-                        sleep 8
                     '''
                 }
             }
@@ -88,12 +87,14 @@ pipeline {
             // }
             steps {
                 echo 'Running tests...'
+                sh 'sleep 15'
                 sh '''
                     python3 -m venv venv
                     . venv/bin/activate
                     pip install -r requirements.txt
-                    pytest tests/test_currency_app.py --junitxml=integration_report.xml
                 '''
+                sh 'sleep 10'
+                sh 'pytest tests/test_currency_app.py --junitxml=integration_report.xml'
             }
         }
     }
