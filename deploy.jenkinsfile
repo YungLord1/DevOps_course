@@ -68,19 +68,21 @@ pipeline {
             steps {
                 script {
                     def fullImageName = params.IMAGE_TAG.contains('/') ?
-                                        params.IMAGE_TAG : 
-                                        "${U}/currency_app:${params.IMAGE_TAG}"
-
-                    echo "Switching Blue slot to new version: ${fullImageName} on port 8000"
-
+                    params.IMAGE_TAG :
+                    "${U}/currency_app:${params.IMAGE_TAG}"
                     withCredentials([
                         file(credentialsId: 'ENV_FILE', variable: 'SECRET_FILE_PATH'),
                         usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'U', passwordVariable: 'P')
                     ]) {
+                        echo "Stopping old Blue version to free port 8000..."
+                        sh 'docker compose -p app-blue down || true'
+
+                        echo "Starting new Blue version: ${fullImageName}"
                         withEnv(["FULL_IMAGE=${fullImageName}", "S_PATH=${SECRET_FILE_PATH}"]) {
                             sh 'IMAGE_NAME=${FULL_IMAGE} APP_PORT=8000 docker compose -p app-blue --env-file ${S_PATH} up -d'
                         }
-                        echo "Stopping Green slot..."
+
+                        echo "Cleaning up Green slot..."
                         sh 'docker compose -p app-green down || true'
                     }
                 }
