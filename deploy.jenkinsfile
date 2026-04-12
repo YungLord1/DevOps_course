@@ -86,7 +86,7 @@ pipeline {
                 }
             }
         }
-
+    }
     post {
         failure {
             echo "DEPLOYMENT FAILED! Cleaning up Green slot, Blue remains untouched."
