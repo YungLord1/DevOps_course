@@ -106,6 +106,11 @@ pipeline {
                 junit 'unit_report.xml'
                 archiveArtifacts artifacts: '*.sarif', allowEmptyArchive: true
                 cleanWs()
+                recordIssues(
+                    tools: [sarif(pattern: 'bandit_report.sarif', id: 'bandit', name: 'Bandit')],
+                    qualityGates: [[threshold: 1, type: 'TOTAL', severity: 'ERROR']]
+                    // Если есть критические ошибки - пайп падает
+                )
             }
         }
         success {
