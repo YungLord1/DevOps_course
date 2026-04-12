@@ -47,15 +47,26 @@ pipeline {
         stage('Build') {
             agent { label 'production' }
             steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    env.DEPLOY_TAG = "${USER}/${REPO_NAME}:${env.BUILD_NUMBER}"
+                    }
+                    echo "Building image: ${env.DEPLOY_TAG}"
+                    sh "docker build -t ${env.DEPLOY_TAG} ."
+                }
+            }
+        }
+        stage('Push') {
+            agent { label 'production' }
+            steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                     script {
-                        env.DEPLOY_TAG = "${USER}/${REPO_NAME}:${env.BUILD_NUMBER}"
                         sh "echo $PASS | docker login -u $USER --password-stdin"
-                        sh "docker build -t ${env.DEPLOY_TAG} ."
                         sh "docker push ${env.DEPLOY_TAG}"
+                        sh "docker rmi ${env.DEPLOY_TAG}"
                     }
                 }
-            } 
+            }
         }
         stage('Deploy') {
             agent { label 'production' }
