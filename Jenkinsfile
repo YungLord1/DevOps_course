@@ -17,6 +17,7 @@ pipeline {
             steps {
                 LintSASTTest()
             }
+        }
         stage('Build') {
             steps {
                 script {
