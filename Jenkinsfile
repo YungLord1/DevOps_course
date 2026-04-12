@@ -98,8 +98,10 @@ pipeline {
     }
     post {
         always {
-            junit 'unit_report.xml'
-            archiveArtifacts artifacts: 'bandit_report.sarif', allowEmptyArchive: true
+            node ('staging'){
+                junit 'unit_report.xml'
+                archiveArtifacts artifacts: 'bandit_report.sarif', allowEmptyArchive: true
+            }
             node ('production'){
                 sh 'docker system prune -f'
             }
