@@ -1,5 +1,5 @@
 import httpx
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from datetime import date
 from typing import Optional, List
 from app.domain import CurrencyRate, CurrencyRepository
