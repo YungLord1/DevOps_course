@@ -15,51 +15,8 @@ pipeline {
     stages {
         stage('Lint + SAST + Tests'){
             steps {
-                script{
-                    echo 'Creating venv...'
-                    sh '''
-                    python3 -m venv venv
-                    ./venv/bin/pip install --upgrade pip
-                    ./venv/bin/pip install flake8 bandit bandit-sarif-formatter pytest -r requirements.txt
-                    '''
-                    parallel(
-                        "Linter (Python)": {
-                            echo 'Runnung linter flake8...'
-                            sh './venv/bin/flake8 . --exclude=venv,.git,__pycache__,.pytest_cache --tee --output-file=flake8_report.txt'
-                        },
-                        "Linter (Docker)": {
-                            sh "docker run --rm -i hadolint/hadolint hadolint -f checkstyle - < Dockerfile > hadolint_report.xml || true"
-                        },
-                        "SAST(bandit)": {
-                            echo "Running bandit..."
-                            sh './venv/bin/bandit -r app/ -f sarif -o bandit_report.sarif || true'
-                        },
-                        "Unit tests": {
-                            echo "Running unit-tests..."
-                            sh '''
-                                export PYTHONPATH=$PYTHONPATH:$(pwd)
-                                ./venv/bin/pytest tests/test_unit.py --junitxml=unit_report.xml
-                            '''
-                        }
-
-                    )
-                }
+                LintSASTTest()
             }
-            post {
-                always {
-                    junit 'unit_report.xml'
-                    archiveArtifacts artifacts: 'bandit_report.sarif, hadolint_report.xml, unit_report.xml', allowEmptyArchive: true
-                    recordIssues(
-                        tools: [
-                            sarif(pattern: 'bandit_report.sarif', id: 'bandit', name: 'Bandit'),
-                            checkStyle(pattern: 'hadolint_report.xml', id: 'hadolint', name: 'Hadolint')
-                        ],
-                        qualityGates: [[threshold: 1, type: 'TOTAL', severity: 'ERROR']]
-                        // Если есть крит ошибки - пайп падает
-                    )
-                }
-            }
-        }
         stage('Build') {
             steps {
                 script {
