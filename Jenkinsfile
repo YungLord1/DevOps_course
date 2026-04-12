@@ -15,29 +15,17 @@ pipeline {
     stages {
         stage('Lint + SAST + Tests'){
             steps {
-                LintSASTTests()
+                lintSASTTests(appDir: 'app', testDir: 'tests')
             }
         }
         stage('Build') {
             steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                    env.DEPLOY_TAG = "${USER}/${REPO_NAME}:${env.BUILD_NUMBER}"
-                    }
-                    echo "Building image: ${env.DEPLOY_TAG}"
-                    sh "docker build -t ${env.DEPLOY_TAG} ."
-                }
+                dockerBuild(repoName: env.REPO_NAME)
             }
         }
         stage('Push') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                    script {
-                        sh "echo $PASS | docker login -u $USER --password-stdin"
-                        sh "docker push ${env.DEPLOY_TAG}"
-                        sh "docker rmi ${env.DEPLOY_TAG}"
-                    }
-                }
+                dockerPush(deployTag: env.DEPLOY_TAG)
             }
         }
         stage('Deploy') {
