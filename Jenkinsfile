@@ -89,9 +89,7 @@ pipeline {
                 }
             }
         }
-
         stage('Smoke test') {
-            agent { label 'staging' }
             steps {
                 script {
                     conditionalStage(name: 'Integration_tests', condition: env.BRANCH_NAME == 'master') {
@@ -110,20 +108,18 @@ pipeline {
     }
     post {
         always {
-            node ('staging'){
-                junit 'unit_report.xml'
-                archiveArtifacts artifacts: 'bandit_report.sarif', allowEmptyArchive: true
-                archiveArtifacts artifacts: 'hadolint_report.json', allowEmptyArchive: true
-                recordIssues(
-                    tools: [
-                        sarif(pattern: 'bandit_report.sarif', id: 'bandit', name: 'Bandit'),
-                        hadolint(pattern: 'hadolint_report.json', id: 'hadolint', name: 'Hadolint')
-                    ],
-                    qualityGates: [[threshold: 1, type: 'TOTAL', severity: 'ERROR']]
-                    // Если есть крит ошибки - пайп падает
-                )
-                cleanWs()
-            }
+            junit 'unit_report.xml'
+            archiveArtifacts artifacts: 'bandit_report.sarif', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'hadolint_report.json', allowEmptyArchive: true
+            recordIssues(
+                tools: [
+                    sarif(pattern: 'bandit_report.sarif', id: 'bandit', name: 'Bandit'),
+                    hadolint(pattern: 'hadolint_report.json', id: 'hadolint', name: 'Hadolint')
+                ],
+                qualityGates: [[threshold: 1, type: 'TOTAL', severity: 'ERROR']]
+                // Если есть крит ошибки - пайп падает
+            )
+            cleanWs()
         }
         success {
             updateGitlabCommitStatus(name: 'jenkins', state: 'success')
