@@ -15,7 +15,7 @@ pipeline {
     stages {
         stage('Lint + SAST + Tests'){
             steps {
-                lintSASTTests()
+                LintSASTTests()
             }
         }
         stage('Build') {
