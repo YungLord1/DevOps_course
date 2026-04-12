@@ -15,7 +15,7 @@ pipeline {
                     def isStaging = (params.ENVIRONMENT == 'staging')
                     def currentStage = isStaging ? 'Deploy to Staging' : 'Deploy to Production'
 
-                        conditionalStage(name: currentStage, condition: true) {
+                    conditionalStage(name: currentStage, condition: true) {
                         checkout scm
 
                         withCredentials([
@@ -24,8 +24,9 @@ pipeline {
                         ]) {
                             echo "Logging into Docker Hub as: ${U}"
                             sh "echo ${P} | docker login -u ${U} --password-stdin"
-
-                            def fullImageName = "${U}/currency_app:${params.IMAGE_TAG}"
+                            def fullImageName = params.IMAGE_TAG.contains('/') ? 
+                                                params.IMAGE_TAG : 
+                                                "${U}/currency_app:${params.IMAGE_TAG}"
 
                             echo "Starting green version: ${fullImageName} on port 8001"
 
