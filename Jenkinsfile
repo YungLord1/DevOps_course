@@ -90,9 +90,10 @@ pipeline {
             }
         }
         stage('Smoke test') {
+            agent { label 'production' }
             steps {
                 script {
-                    conditionalStage(name: 'Integration_tests', condition: env.BRANCH_NAME == 'master') {
+                    conditionalStage(name: 'Smoke test', condition: env.BRANCH_NAME == 'master') {
                         echo 'Running tests...'
                         sh '''
                             python3 -m venv venv
