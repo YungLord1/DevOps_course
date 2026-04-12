@@ -1,6 +1,6 @@
 #!groovy
 pipeline {
-    agent none
+    agent{label 'staging'}
     environment {
         REPO_NAME = "currency_app"
     }
@@ -13,8 +13,12 @@ pipeline {
         gitlab(triggerOnPush: true, triggerOnMergeRequest: true, branchFilterType: 'All')
     }
     stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
         stage('Lint + SAST + Tests'){
-            agent{label 'staging'}
             steps {
                 script{
                     echo 'Creating venv...'
@@ -45,7 +49,6 @@ pipeline {
             }
         }
         stage('Build') {
-            agent { label 'production' }
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
@@ -57,7 +60,6 @@ pipeline {
             }
         }
         stage('Push') {
-            agent { label 'production' }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                     script {
@@ -89,7 +91,7 @@ pipeline {
             }
         }
 
-        stage('Integration_tests') {
+        stage('Smoke test') {
             agent { label 'staging' }
             steps {
                 script {
@@ -120,7 +122,7 @@ pipeline {
                 recordIssues(
                     tools: [sarif(pattern: 'bandit_report.sarif', id: 'bandit', name: 'Bandit')],
                     qualityGates: [[threshold: 1, type: 'TOTAL', severity: 'ERROR']]
-                    // Если есть критические ошибки - пайп падает
+                    // Если есть крит ошибки - пайп падает
                 )
             }
         }
