@@ -43,6 +43,12 @@ pipeline {
                     )
                 }
             }
+            post {
+                always {
+                    junit 'unit_report.xml'
+                    archiveArtifacts artifacts: '*.sarif', allowEmptyArchive: true
+                }
+            }
         }
         stage('Build') {
             agent { label 'production' }
@@ -98,10 +104,6 @@ pipeline {
     }
     post {
         always {
-            node ('staging'){
-                junit 'unit_report.xml'
-                archiveArtifacts artifacts: 'bandit_report.sarif', allowEmptyArchive: true
-            }
             node ('production'){
                 sh 'docker system prune -f'
             }
