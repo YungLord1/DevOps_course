@@ -25,7 +25,7 @@ pipeline {
                     parallel(
                         "Linter (Python)": {
                             echo 'Runnung linter flake8...'
-                            sh './venv/bin/flake8 app/ --exclude=venv,.git,__pycache__,.pytest_cache'
+                            sh './venv/bin/flake8 . --exclude=venv,.git,__pycache__,.pytest_cache --tee --output-file=flake8_report.txt'
                         },
                         "Linter (Docker)": {
                             sh "docker run --rm -i hadolint/hadolint hadolint -f checkstyle - < Dockerfile > hadolint_report.xml || true"
@@ -43,6 +43,21 @@ pipeline {
                         }
 
                     )
+                }
+            }
+            post {
+                always {
+                    junit 'unit_report.xml'
+                    archiveArtifacts artifacts: 'bandit_report.sarif, hadolint_report.xml, unit_report.xml', allowEmptyArchive: true
+                    recordIssues(
+                        tools: [
+                            sarif(pattern: 'bandit_report.sarif', id: 'bandit', name: 'Bandit'),
+                            checkStyle(pattern: 'hadolint_report.xml', id: 'hadolint', name: 'Hadolint')
+                        ],
+                        qualityGates: [[threshold: 1, type: 'TOTAL', severity: 'ERROR']]
+                        // Если есть крит ошибки - пайп падает
+                    )
+                    cleanWs()
                 }
             }
         }
@@ -108,19 +123,6 @@ pipeline {
         }
     }
     post {
-        always {
-            junit 'unit_report.xml'
-            archiveArtifacts artifacts: 'bandit_report.sarif, hadolint_report.xml', allowEmptyArchive: true
-            recordIssues(
-                tools: [
-                    sarif(pattern: 'bandit_report.sarif', id: 'bandit', name: 'Bandit'),
-                    checkStyle(pattern: 'hadolint_report.xml', id: 'hadolint', name: 'Hadolint')
-                ],
-                qualityGates: [[threshold: 1, type: 'TOTAL', severity: 'ERROR']]
-                // Если есть крит ошибки - пайп падает
-            )
-            cleanWs()
-        }
         success {
             updateGitlabCommitStatus(name: 'jenkins', state: 'success')
             echo 'Pipeline finished successfully'
