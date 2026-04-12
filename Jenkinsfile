@@ -28,38 +28,20 @@ pipeline {
                 dockerPush(deployTag: env.DEPLOY_TAG)
             }
         }
-        stage('Deploy') {
-            options {
-                timeout(time: 48, unit: 'HOURS')
-            }
+        stage('Deploy Trigger') {
             steps {
                 script {
-                    conditionalStage(name: 'Deploy', condition: env.BRANCH_NAME == 'master') {
-                        checkout scm
-                        withCredentials([file(credentialsId: 'ENV_FILE', variable: 'SECRET_FILE_PATH')]) {
-                            sh """
-                                echo "Deploy image: ${env.DEPLOY_TAG}"
-                                IMAGE_NAME=${env.DEPLOY_TAG} docker compose --env-file "${SECRET_FILE_PATH}" down --remove-orphans
-                                IMAGE_NAME=${env.DEPLOY_TAG} docker compose --env-file "${SECRET_FILE_PATH}" up -d
-                            """
-                            sh 'docker system prune -f'
-                        }
-                    }
-                }
-            }
-        }
-        stage('Smoke test') {
-            steps {
-                script {
-                    conditionalStage(name: 'Smoke test', condition: env.BRANCH_NAME == 'master') {
-                        echo 'Running tests...'
-                        sh '''
-                            python3 -m venv venv
-                            . venv/bin/activate
-                            ./venv/bin/pip install -r requirements.txt
-                            ./venv/bin/python3 -m pytest tests/test_currency_app.py --junitxml=smoke_report.xml
-                        '''
-                        junit 'smoke_report.xml'
+                    def shouldDeploy = (env.BRANCH_NAME == 'master' || env.TAG_NAME != null)
+                    def targetEnv = (env.TAG_NAME != null) ? 'production' : 'staging'
+                    conditionalStage(name: 'Deploy Trigger', condition: shouldDeploy) {
+                        echo "Triggering deploy to ${targetEnv}..."
+                        build job: 'Deploy_app',
+                            parameters: [
+                                string(name: 'IMAGE_TAG', value: env.DEPLOY_TAG),
+                                string(name: 'ENVIRONMENT', value: targetEnv)
+                            ],
+                            wait: true,
+                            propagate: true
                     }
                 }
             }
