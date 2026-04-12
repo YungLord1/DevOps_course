@@ -84,7 +84,6 @@ pipeline {
             }
         }
         stage('Deploy') {
-            agent { label 'production' }
             options {
                 timeout(time: 48, unit: 'HOURS')
             }
@@ -105,7 +104,6 @@ pipeline {
             }
         }
         stage('Smoke test') {
-            agent { label 'production' }
             steps {
                 script {
                     conditionalStage(name: 'Smoke test', condition: env.BRANCH_NAME == 'master') {
