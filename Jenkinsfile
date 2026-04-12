@@ -13,11 +13,6 @@ pipeline {
         gitlab(triggerOnPush: true, triggerOnMergeRequest: true, branchFilterType: 'All')
     }
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
         stage('Lint + SAST + Tests'){
             steps {
                 script{
@@ -28,9 +23,12 @@ pipeline {
                     ./venv/bin/pip install flake8 bandit bandit-sarif-formatter pytest -r requirements.txt
                     '''
                     parallel(
-                        "Linter": {
+                        "Linter (Python)": {
                             echo 'Runnung linter flake8...'
                             sh './venv/bin/flake8 app/ --exclude=venv,.git,__pycache__,.pytest_cache'
+                        },
+                        "Linter (Docker)": {
+                            sh "docker run --rm -i hadolint/hadolint hadolint -f json - < Dockerfile > hadolint_report.json || true"
                         },
                         "SAST(bandit)": {
                             echo "Running bandit..."
@@ -85,6 +83,7 @@ pipeline {
                                 IMAGE_NAME=${env.DEPLOY_TAG} docker compose --env-file "${SECRET_FILE_PATH}" down --remove-orphans
                                 IMAGE_NAME=${env.DEPLOY_TAG} docker compose --env-file "${SECRET_FILE_PATH}" up -d
                             """
+                            sh 'docker system prune -f'
                         }
                     }
                 }
@@ -111,18 +110,18 @@ pipeline {
     }
     post {
         always {
-            node ('production'){
-                sh 'docker system prune -f'
-                cleanWs()
-            }
             node ('staging'){
                 junit 'unit_report.xml'
-                archiveArtifacts artifacts: '*.sarif', allowEmptyArchive: true
-                cleanWs()
+                archiveArtifacts artifacts: 'bandit_report.sarif', allowEmptyArchive: true
+                archiveArtifacts artifacts: 'hadolint_report.json', allowEmptyArchive: true
                 recordIssues(
-                    tools: [sarif(pattern: 'bandit_report.sarif', id: 'bandit', name: 'Bandit')],
+                    tools: [
+                        sarif(pattern: 'bandit_report.sarif', id: 'bandit', name: 'Bandit'),
+                        hadolint(pattern: 'hadolint_report.json', id: 'hadolint', name: 'Hadolint')
+                    ],
                     qualityGates: [[threshold: 1, type: 'TOTAL', severity: 'ERROR']]
                     // Если есть крит ошибки - пайп падает
+                    cleanWs()
                 )
             }
         }
