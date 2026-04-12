@@ -15,7 +15,7 @@ pipeline {
     stages {
         stage('Lint + SAST + Tests'){
             steps {
-                lintSASTTests()
+                lintSASTTests(appDir: 'app', testDir: 'tests')
             }
         }
         stage('Build') {
