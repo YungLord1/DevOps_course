@@ -57,9 +57,9 @@ pipeline {
                             python3 -m venv venv
                             . venv/bin/activate
                             ./venv/bin/pip install -r requirements.txt
-                            ./venv/bin/python3 -m pytest tests/test_currency_app.py --junitxml=integration_report.xml
+                            ./venv/bin/python3 -m pytest tests/test_currency_app.py --junitxml=smoke_report.xml
                         '''
-                        junit 'integration_report.xml'
+                        junit 'smoke_report.xml'
                     }
                 }
             }

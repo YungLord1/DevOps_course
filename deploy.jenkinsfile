@@ -1,0 +1,78 @@
+@Library('shared-library') _
+
+pipeline {
+    agent { label "${params.ENVIRONMENT}" }
+
+    parameters {
+        string(name: 'IMAGE_TAG', defaultValue: '', description: 'image tag')
+        choice(name: 'ENVIRONMENT', choices: ['staging', 'production'])
+    }
+
+    stages {
+        stage('Deploy Green') {
+            steps {
+                script {
+                    def isStaging = (params.ENVIRONMENT == 'staging')
+                    def currentStage = isStaging ? 'Deploy to Staging' : 'Deploy to Production'
+
+                    conditionalStage(name: currentStage, condition: true) {
+                        checkout scm
+                        withCredentials([file(credentialsId: 'ENV_FILE', variable: 'SECRET_FILE_PATH')]) {
+                            echo "Deploying Green Slot"
+                            sh """
+                                IMAGE_NAME=${params.IMAGE_TAG} APP_PORT=8001 \
+                                docker compose -p app-green --env-file "${SECRET_FILE_PATH}" up -d
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Smoke tests') {
+            steps {
+                script {
+                    echo "Testing Green on port 8001"
+                    sh '''
+                        python3 -m venv venv
+                        ./venv/bin/pip install -r requirements.txt
+                        ./venv/bin/python3 -m pytest tests/test_currency_app.py --junitxml=smoke_report.xml
+                    '''
+
+                    sh "curl -f http://localhost:8001/info || exit 1"
+                }
+            }
+            post {
+                always {
+                    junit 'smoke_report.xml'
+                }
+            }
+        }
+
+        stage('Switch Green to Blue') {
+            steps {
+                script {
+                    echo "Tests passed! Switching Green to Blue"
+                    withCredentials([file(credentialsId: 'ENV_FILE', variable: 'SECRET_FILE_PATH')]) {
+                        sh "docker compose -p app-blue --env-file ${SECRET_FILE_PATH} down || true"
+
+                        sh "IMAGE_NAME=${params.IMAGE_TAG} APP_PORT=8000 docker compose -p app-blue --env-file ${SECRET_FILE_PATH} up -d"
+
+                        sh "docker compose -p app-green down"
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        failure {
+            echo "Failure!!!"
+            sh "docker compose -p app-green down || true"
+        }
+        always {
+            sh 'docker system prune -f'
+            cleanWs()
+        }
+    }
+}
