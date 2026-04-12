@@ -8,37 +8,70 @@ pipeline {
         timestamps()
         buildDiscarder(logRotator(numToKeepStr: '5'))
         gitLabConnection('gitlab-server')
+        skipDefaultCheckout()
     }
     triggers {
         gitlab(triggerOnPush: true, triggerOnMergeRequest: true, branchFilterType: 'All')
     }
     stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    conditionalStage(name: 'Checkout', condition: true) {
+                        checkout scm
+                    }
+                }
+            }
+        }
         stage('Lint + SAST + Tests'){
             steps {
-                LintSASTTests()
+                script {
+                    conditionalStage(name: 'Lint + SAST + Tests', condition: true) {
+                        LintSASTTests()
+                    }
+                }
             }
         }
         stage('Build') {
             steps {
-                dockerBuild(repoName: env.REPO_NAME)
+                script {
+                    def isMR = (env.gitlabMergeRequestIid != null || env.CHANGE_ID != null)
+                    def isMaster = (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'main')
+                    def isTag = (env.TAG_NAME != null)
+
+                    def buildCond = (isMR || isMaster || isTag)
+
+                    conditionalStage(name: 'Build', condition: buildCond) {
+                        dockerBuild(repoName: env.REPO_NAME)
+                    }
+                }
             }
         }
         stage('Push') {
             steps {
-                dockerPush(deployTag: env.DEPLOY_TAG)
+                script {
+                    def isMaster = (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'main')
+                    def isTag = (env.TAG_NAME != null)
+
+                    def pushCond = (isMaster || isTag)
+
+                    conditionalStage(name: 'Push', condition: pushCond) {
+                        dockerPush(deployTag: env.DEPLOY_TAG)
+                    }
+                }
             }
         }
-        stage('Deploy Trigger') {
+        stage('Deploy to Staging') {
             steps {
                 script {
-                    def shouldDeploy = (env.BRANCH_NAME == 'master' || env.TAG_NAME != null)
-                    def targetEnv = (env.TAG_NAME != null) ? 'production' : 'staging'
-                    conditionalStage(name: 'Deploy Trigger', condition: shouldDeploy) {
-                        echo "Triggering deploy to ${targetEnv}..."
+                    def isMaster = (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'main')
+
+                    conditionalStage(name: 'Deploy to Staging', condition: isMaster) {
+                        echo "Target: Staging. Starting Deploy_app job..."
                         build job: 'Deploy_app',
                             parameters: [
                                 string(name: 'IMAGE_TAG', value: env.DEPLOY_TAG),
-                                string(name: 'ENVIRONMENT', value: targetEnv)
+                                string(name: 'ENVIRONMENT', value: 'staging')
                             ],
                             wait: true,
                             propagate: true
@@ -46,7 +79,25 @@ pipeline {
                 }
             }
         }
-    }
+
+        stage('Deploy to Production') {
+            steps {
+                script {
+                    def isTag = (env.TAG_NAME != null)
+
+                    conditionalStage(name: 'Deploy to Production', condition: isTag) {
+                        echo "Target: Production. Starting Deploy_app job..."
+                        build job: 'Deploy_app',
+                            parameters: [
+                                string(name: 'IMAGE_TAG', value: env.DEPLOY_TAG),
+                                string(name: 'ENVIRONMENT', value: 'production')
+                            ],
+                            wait: true,
+                            propagate: true
+                    }
+                }
+            }
+        }
     post {
         always {
             cleanWs()
