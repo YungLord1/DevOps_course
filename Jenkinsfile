@@ -43,12 +43,6 @@ pipeline {
                     )
                 }
             }
-            post {
-                always {
-                    junit 'unit_report.xml'
-                    archiveArtifacts artifacts: '*.sarif', allowEmptyArchive: true
-                }
-            }
         }
         stage('Build') {
             agent { label 'production' }
@@ -106,8 +100,13 @@ pipeline {
         always {
             node ('production'){
                 sh 'docker system prune -f'
+                cleanWs()
             }
-            cleanWs()
+            node ('staging'){
+                junit 'unit_report.xml'
+                archiveArtifacts artifacts: '*.sarif', allowEmptyArchive: true
+                cleanWs()
+            }
         }
         success {
             updateGitlabCommitStatus(name: 'jenkins', state: 'success')
