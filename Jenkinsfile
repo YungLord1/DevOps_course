@@ -13,31 +13,35 @@ pipeline {
         gitlab(triggerOnPush: true, triggerOnMergeRequest: true, branchFilterType: 'All')
     }
     stages {
-        stage('Lint') {
-            agent { label 'staging' }
+        stage('Lint + SAST + Tests'){
+            agent{label 'staging'}
             steps {
-                echo 'Running linter...'
-                withCredentials([string(credentialsId: 'SUDO_PASS', variable: 'SUDO_PASSWORD')]) {
-                    sh "echo $SUDO_PASSWORD | sudo -S apt-get update && sudo -S apt-get install -y python3-venv"
-                }
-                sh 'python3 -m venv venv'
-                sh './venv/bin/pip install flake8'
-                sh './venv/bin/flake8 app/ --exclude=venv,.git,__pycache__,.pytest_cache'
-                sleep 2
-            }
-        }
-        stage('Unit Tests') {
-            agent { label 'staging' }
-            steps {
-                echo 'Start unit tests...'
-                sh '''
+                script{
+                    echo 'Creating venv...'
+                    sh '''
                     python3 -m venv venv
-                    . venv/bin/activate
-                    pip install -r requirements.txt
-                    export PYTHONPATH=$PYTHONPATH:$(pwd)
-                    pytest tests/test_unit.py --junitxml=unit_report.xml
-                '''
-                junit 'unit_report.xml'
+                    ./venv/bin/pip install --upgrade pip
+                    ./venv/bin/pip install flake8 bandit bandit-sarif-formatter pytest -r requirements.txt
+                    '''
+                    parallel(
+                        "Linter": {
+                            echo 'Runnung linter flake8...'
+                            sh './venv/bin/flake8 app/ --exclude=venv,.git,__pycache__,.pytest_cache'
+                        },
+                        "SAST(bandit)": {
+                            echo "Running bandit..."
+                            sh './venv/bin/bandit -r app/ -f sarif -o bandit_report.sarif || true'
+                        },
+                        "Unit tests": {
+                            echo "Running unit-tests..."
+                            sh '''
+                                export PYTHONPATH=$PYTHONPATH:$(pwd)
+                                ./venv/bin/pytest tests/test_unit.py --junitxml=unit_report.xml
+                            '''
+                        }
+
+                    )
+                }
             }
         }
         stage('Build') {
@@ -94,9 +98,12 @@ pipeline {
     }
     post {
         always {
+            junit 'unit_report.xml'
+            archiveArtifacts artifacts: 'bandit_report.sarif', allowEmptyArchive: true
             node ('production'){
                 sh 'docker system prune -f'
             }
+            cleanWs()
         }
         success {
             updateGitlabCommitStatus(name: 'jenkins', state: 'success')
