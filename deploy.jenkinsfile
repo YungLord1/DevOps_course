@@ -67,25 +67,25 @@ pipeline {
         stage('Switch Green to Blue') {
             steps {
                 script {
-                    echo "Tests passed! Moving Green version to Blue (Main Port 8000)"
+                    def fullImageName = params.IMAGE_TAG.contains('/') ?
+                                        params.IMAGE_TAG : 
+                                        "${U}/currency_app:${params.IMAGE_TAG}"
+
+                    echo "Switching Blue slot to new version: ${fullImageName} on port 8000"
 
                     withCredentials([
                         file(credentialsId: 'ENV_FILE', variable: 'SECRET_FILE_PATH'),
                         usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'U', passwordVariable: 'P')
                     ]) {
-                        def fullImageName = "${U}/currency_app:${params.IMAGE_TAG}"
-
                         withEnv(["FULL_IMAGE=${fullImageName}", "S_PATH=${SECRET_FILE_PATH}"]) {
-                            sh 'docker compose -p app-blue --env-file ${S_PATH} down || true'
                             sh 'IMAGE_NAME=${FULL_IMAGE} APP_PORT=8000 docker compose -p app-blue --env-file ${S_PATH} up -d'
-                            sh 'docker compose -p app-green down'
                         }
+                        echo "Stopping Green slot..."
+                        sh 'docker compose -p app-green down || true'
                     }
-                    echo "Switching complete. Service is live on port 8000."
                 }
             }
         }
-    }
 
     post {
         failure {
