@@ -11,7 +11,7 @@ pipeline {
         skipDefaultCheckout()
     }
     triggers {
-        gitlab(triggerOnPush: true, triggerOnMergeRequest: true, triggerOnTagPush: true, branchFilterType: 'All')
+        gitlab(triggerOnPush: true, triggerOnMergeRequest: true, branchFilterType: 'All')
     }
     stages {
         stage('Checkout') {
