@@ -121,8 +121,8 @@ pipeline {
                     ],
                     qualityGates: [[threshold: 1, type: 'TOTAL', severity: 'ERROR']]
                     // Если есть крит ошибки - пайп падает
-                    cleanWs()
                 )
+                cleanWs()
             }
         }
         success {
