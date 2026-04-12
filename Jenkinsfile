@@ -28,7 +28,7 @@ pipeline {
                             sh './venv/bin/flake8 app/ --exclude=venv,.git,__pycache__,.pytest_cache'
                         },
                         "Linter (Docker)": {
-                            sh "docker run --rm -i hadolint/hadolint hadolint -f json - < Dockerfile > hadolint_report.json || true"
+                            sh "docker run --rm -i hadolint/hadolint hadolint -f checkstyle - < Dockerfile > hadolint_report.xml || true"
                         },
                         "SAST(bandit)": {
                             echo "Running bandit..."
@@ -110,12 +110,11 @@ pipeline {
     post {
         always {
             junit 'unit_report.xml'
-            archiveArtifacts artifacts: 'bandit_report.sarif', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'hadolint_report.json', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'bandit_report.sarif, hadolint_report.xml', allowEmptyArchive: true
             recordIssues(
                 tools: [
                     sarif(pattern: 'bandit_report.sarif', id: 'bandit', name: 'Bandit'),
-                    hadolint(pattern: 'hadolint_report.json', id: 'hadolint', name: 'Hadolint')
+                    checkStyle(pattern: 'hadolint_report.xml', id: 'hadolint', name: 'Hadolint')
                 ],
                 qualityGates: [[threshold: 1, type: 'TOTAL', severity: 'ERROR']]
                 // Если есть крит ошибки - пайп падает
