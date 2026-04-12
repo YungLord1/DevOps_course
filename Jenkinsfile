@@ -57,7 +57,6 @@ pipeline {
                         qualityGates: [[threshold: 1, type: 'TOTAL', severity: 'ERROR']]
                         // Если есть крит ошибки - пайп падает
                     )
-                    cleanWs()
                 }
             }
         }
@@ -121,6 +120,9 @@ pipeline {
         }
     }
     post {
+        always {
+            cleanWs()
+        }
         success {
             updateGitlabCommitStatus(name: 'jenkins', state: 'success')
             echo 'Pipeline finished successfully'
