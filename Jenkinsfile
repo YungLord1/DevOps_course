@@ -56,9 +56,15 @@ pipeline {
             }
             steps {
                 script {
+                    def isHomeworkBranch = (env.BRANCH_NAME == 'homework' || env.BRANCH_NAME == 'i.chach/homework4')
+                    if (!isHomeworkBranch || env.CHANGE_ID != null || env.gitlabMergeRequestIid != null) {
+                    echo "Valid target detected (MR, Tag or Main). Running Trivy..."
                     sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --format sarif --output trivy_report.sarif ${IMAGE_NAME}"
                     archiveArtifacts artifacts: 'trivy_report.sarif', allowEmptyArchive: true
                     recordIssues(tools: [sarif(pattern: 'trivy_report.sarif', id: 'trivy', name: 'Trivy SCA Scan')])
+                    } else {
+                        echo "Skipping Trivy: Development branch [${env.BRANCH_NAME}] detected."
+                    }
                 }
             }
         }
