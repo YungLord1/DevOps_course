@@ -1,10 +1,10 @@
 import requests
 
-base_url = "http://10.184.0.45:8000/info/currency"
+base_url = "http://10.184.0.45:8001/info/currency"
 
 
 def test_info():
-    info_url = "http://10.184.0.45:8000/info"
+    info_url = "http://10.184.0.45:8001/info"
     res = requests.get(info_url)
     answer = res.json()
 
