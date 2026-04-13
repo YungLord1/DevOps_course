@@ -47,6 +47,25 @@ pipeline {
                 }
             }
         }
+        stage('Scan Trivy') {
+            steps {
+                script {
+                    def isMR = (env.gitlabMergeRequestIid != null || env.CHANGE_ID != null)
+                    def isMaster = (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'main')
+                    def isTag = (env.TAG_NAME != null)
+                    def buildCond = (isMR || isMaster || isTag)
+
+                    conditionalStage(name: 'Trivy SCA', condition: buildCond) {
+                        echo "Scanning image for vulnerabilities: ${IMAGE_NAME}"
+                        sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --format sarif --output trivy_report.sarif ${IMAGE_NAME}"
+                        archiveArtifacts artifacts: 'trivy_report.sarif', allowEmptyArchive: true
+                        recordIssues(
+                            tools: [sarif(pattern: 'trivy_report.sarif', id: 'trivy', name: 'Trivy SCA Scan')]
+                        )
+                    }
+                }
+            }
+        }
         stage('Push') {
             steps {
                 script {
