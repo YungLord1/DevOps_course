@@ -55,16 +55,12 @@ pipeline {
                     def isTag = (env.TAG_NAME != null)
 
                     if (isMR || isMaster || isTag) {
-                        echo "Trigger detected! Running Trivy for ${IMAGE_NAME}..."
+                        echo "Trigger detected! Running Trivy..."
                         sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --format sarif --output trivy_report.sarif ${IMAGE_NAME}"
                         archiveArtifacts artifacts: 'trivy_report.sarif', allowEmptyArchive: true
-                    recordIssues(
-                        tools: [sarif(pattern: 'trivy_report.sarif', id: 'trivy', name: 'Trivy SCA Scan')]
-                    )
+                        recordIssues(tools: [sarif(pattern: 'trivy_report.sarif', id: 'trivy', name: 'Trivy SCA Scan')])
                     } else {
-                        Utils.markStageSkippedForConditional('Security Scan (Trivy)')
-                        echo "Skipping Trivy: Not a target branch or MR."
-                        return
+                        echo "Skipping Trivy scan: Condition not met for branch ${env.BRANCH_NAME}"
                     }
                 }
             }
