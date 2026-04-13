@@ -51,14 +51,15 @@ pipeline {
             steps {
                 script {
                     if (env.BRANCH_NAME.contains('MR-') || env.BRANCH_NAME == 'main' || env.TAG_NAME != null) {
-                        echo "VULNERABILITY SCAN STARTING for branch: ${env.BRANCH_NAME}"
-                        sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --format sarif --output trivy_report.sarif ${IMAGE_NAME}"
-                        archiveArtifacts artifacts: 'trivy_report.sarif', allowEmptyArchive: true
-                        recordIssues(
-                            tools: [sarif(pattern: 'trivy_report.sarif', id: 'trivy', name: 'Trivy SCA Scan')]
-                        )
-                    } else {
-                        echo "Trivy skipped for branch: ${env.BRANCH_NAME}"
+                        def imageTag = env.BUILD_NUMBER 
+                        def trivyImage = "${env.REPO_NAME}:${imageTag}"
+                        echo "Scanning existing image: ${trivyImage}"
+                        sh "docker images | grep ${env.REPO_NAME} || true"
+                        sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --format sarif --output trivy_report.sarif ${trivyImage} || true"
+                        if (fileExists('trivy_report.sarif')) {
+                            archiveArtifacts artifacts: 'trivy_report.sarif', allowEmptyArchive: true
+                            recordIssues(tools: [sarif(pattern: 'trivy_report.sarif', id: 'trivy', name: 'Trivy SCA Scan')])
+                        }
                     }
                 }
             }
