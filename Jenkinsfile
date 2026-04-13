@@ -49,28 +49,31 @@ pipeline {
         }
         stage('Security Scan (Trivy)') {
             steps {
+                when {
+                    expression {
+                        return env.BRANCH_NAME.contains('MR-') || env.BRANCH_NAME == 'main' || env.TAG_NAME != null 
+                    }
+                }
                 script {
-                    if (env.BRANCH_NAME.contains('MR-') || env.BRANCH_NAME == 'main' || env.TAG_NAME != null) {
-                        def trivyImage = env.DEPLOY_TAG
-                        echo "Scanning image from build stage: ${trivyImage}"
+                    def trivyImage = env.DEPLOY_TAG
+                    echo "Scanning image from build stage: ${trivyImage}"
 
-                        sh """
-                            docker run --rm \
-                            -v /var/run/docker.sock:/var/run/docker.sock \
-                            -v ${WORKSPACE}:/apps \
-                            -w /apps \
-                            aquasec/trivy:0.45.0 image \
-                            --format sarif \
-                            --output trivy_report.sarif \
-                            ${trivyImage} || true
-                        """
-                        
-                        if (fileExists('trivy_report.sarif')) {
-                            archiveArtifacts artifacts: 'trivy_report.sarif', allowEmptyArchive: true
-                            recordIssues(tools: [sarif(pattern: 'trivy_report.sarif', id: 'trivy', name: 'Trivy SCA Scan')])
-                        } else {
-                            error "Trivy report was not generated in workspace!"
-                        }
+                    sh """
+                        docker run --rm \
+                        -v /var/run/docker.sock:/var/run/docker.sock \
+                        -v ${WORKSPACE}:/apps \
+                        -w /apps \
+                        aquasec/trivy:0.45.0 image \
+                        --format sarif \
+                        --output trivy_report.sarif \
+                        ${trivyImage} || true
+                    """
+
+                    if (fileExists('trivy_report.sarif')) {
+                        archiveArtifacts artifacts: 'trivy_report.sarif', allowEmptyArchive: true
+                        recordIssues(tools: [sarif(pattern: 'trivy_report.sarif', id: 'trivy', name: 'Trivy SCA Scan')])
+                    } else {
+                        error "Trivy report was not generated in workspace!"
                     }
                 }
             }
