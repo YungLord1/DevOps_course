@@ -1,0 +1,548 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "fullName": "Trivy Vulnerability Scanner",
+          "informationUri": "https://github.com/aquasecurity/trivy",
+          "name": "Trivy",
+          "rules": [
+            {
+              "id": "CVE-2025-8869",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "pip: pip missing checks on symbolic link extraction"
+              },
+              "fullDescription": {
+                "text": "When extracting a tar archive pip may not check symbolic links point into the extraction directory if the tarfile module doesn\u0026#39;t implement PEP 706.\nNote that upgrading pip to a \u0026#34;fixed\u0026#34; version for this vulnerability doesn\u0026#39;t fix all known vulnerabilities that are remediated by using a Python version that implements PEP 706.\n\nNote that this is a vulnerability in pip\u0026#39;s fallback implementation of tar extraction for Python versions that don\u0026#39;t implement PEP 706\nand therefore are not secure to all vulnerabilities in the Python \u0026#39;tarfile\u0026#39; module. If you\u0026#39;re using a Python version that implements PEP 706\nthen pip doesn\u0026#39;t use the \u0026#34;vulnerable\u0026#34; fallback code.\n\nMitigations include upgrading to a version of pip that includes the fix, upgrading to a Python version that implements PEP 706 (Python \u0026gt;=3.9.17, \u0026gt;=3.10.12, \u0026gt;=3.11.4, or \u0026gt;=3.12),\napplying the linked patch, or inspecting source distributions (sdists) before installation as is already a best-practice."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2025-8869",
+              "help": {
+                "text": "Vulnerability CVE-2025-8869\nSeverity: MEDIUM\nPackage: pip\nFixed Version: 25.3\nLink: [CVE-2025-8869](https://avd.aquasec.com/nvd/cve-2025-8869)\nWhen extracting a tar archive pip may not check symbolic links point into the extraction directory if the tarfile module doesn't implement PEP 706.\nNote that upgrading pip to a \"fixed\" version for this vulnerability doesn't fix all known vulnerabilities that are remediated by using a Python version that implements PEP 706.\n\nNote that this is a vulnerability in pip's fallback implementation of tar extraction for Python versions that don't implement PEP 706\nand therefore are not secure to all vulnerabilities in the Python 'tarfile' module. If you're using a Python version that implements PEP 706\nthen pip doesn't use the \"vulnerable\" fallback code.\n\nMitigations include upgrading to a version of pip that includes the fix, upgrading to a Python version that implements PEP 706 (Python \u003e=3.9.17, \u003e=3.10.12, \u003e=3.11.4, or \u003e=3.12),\napplying the linked patch, or inspecting source distributions (sdists) before installation as is already a best-practice.",
+                "markdown": "**Vulnerability CVE-2025-8869**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|pip|25.3|[CVE-2025-8869](https://avd.aquasec.com/nvd/cve-2025-8869)|\n\nWhen extracting a tar archive pip may not check symbolic links point into the extraction directory if the tarfile module doesn't implement PEP 706.\nNote that upgrading pip to a \"fixed\" version for this vulnerability doesn't fix all known vulnerabilities that are remediated by using a Python version that implements PEP 706.\n\nNote that this is a vulnerability in pip's fallback implementation of tar extraction for Python versions that don't implement PEP 706\nand therefore are not secure to all vulnerabilities in the Python 'tarfile' module. If you're using a Python version that implements PEP 706\nthen pip doesn't use the \"vulnerable\" fallback code.\n\nMitigations include upgrading to a version of pip that includes the fix, upgrading to a Python version that implements PEP 706 (Python \u003e=3.9.17, \u003e=3.10.12, \u003e=3.11.4, or \u003e=3.12),\napplying the linked patch, or inspecting source distributions (sdists) before installation as is already a best-practice."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "0.0",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-1703",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "pip: pip: Information disclosure via path traversal when installing crafted wheel archives"
+              },
+              "fullDescription": {
+                "text": "When pip is installing and extracting a maliciously crafted wheel archive, files may be extracted outside the installation directory. The path traversal is limited to prefixes of the installation directory, thus isn\u0026#39;t able to inject or overwrite executable files in typical situations."
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-1703",
+              "help": {
+                "text": "Vulnerability CVE-2026-1703\nSeverity: LOW\nPackage: pip\nFixed Version: 26.0\nLink: [CVE-2026-1703](https://avd.aquasec.com/nvd/cve-2026-1703)\nWhen pip is installing and extracting a maliciously crafted wheel archive, files may be extracted outside the installation directory. The path traversal is limited to prefixes of the installation directory, thus isn't able to inject or overwrite executable files in typical situations.",
+                "markdown": "**Vulnerability CVE-2026-1703**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|LOW|pip|26.0|[CVE-2026-1703](https://avd.aquasec.com/nvd/cve-2026-1703)|\n\nWhen pip is installing and extracting a maliciously crafted wheel archive, files may be extracted outside the installation directory. The path traversal is limited to prefixes of the installation directory, thus isn't able to inject or overwrite executable files in typical situations."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "0.0",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "LOW"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2024-35195",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "requests: subsequent requests to the same host ignore cert verification"
+              },
+              "fullDescription": {
+                "text": "Requests is a HTTP library. Prior to 2.32.0, when making requests through a Requests `Session`, if the first request is made with `verify=False` to disable cert verification, all subsequent requests to the same host will continue to ignore cert verification regardless of changes to the value of `verify`. This behavior will continue for the lifecycle of the connection in the connection pool. This vulnerability is fixed in 2.32.0."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2024-35195",
+              "help": {
+                "text": "Vulnerability CVE-2024-35195\nSeverity: MEDIUM\nPackage: requests\nFixed Version: 2.32.0\nLink: [CVE-2024-35195](https://avd.aquasec.com/nvd/cve-2024-35195)\nRequests is a HTTP library. Prior to 2.32.0, when making requests through a Requests `Session`, if the first request is made with `verify=False` to disable cert verification, all subsequent requests to the same host will continue to ignore cert verification regardless of changes to the value of `verify`. This behavior will continue for the lifecycle of the connection in the connection pool. This vulnerability is fixed in 2.32.0.",
+                "markdown": "**Vulnerability CVE-2024-35195**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|requests|2.32.0|[CVE-2024-35195](https://avd.aquasec.com/nvd/cve-2024-35195)|\n\nRequests is a HTTP library. Prior to 2.32.0, when making requests through a Requests `Session`, if the first request is made with `verify=False` to disable cert verification, all subsequent requests to the same host will continue to ignore cert verification regardless of changes to the value of `verify`. This behavior will continue for the lifecycle of the connection in the connection pool. This vulnerability is fixed in 2.32.0."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "5.6",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2024-47081",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "requests: Requests vulnerable to .netrc credentials leak via malicious URLs"
+              },
+              "fullDescription": {
+                "text": "Requests is a HTTP library. Due to a URL parsing issue, Requests releases prior to 2.32.4 may leak .netrc credentials to third parties for specific maliciously-crafted URLs. Users should upgrade to version 2.32.4 to receive a fix. For older versions of Requests, use of the .netrc file can be disabled with `trust_env=False` on one\u0026#39;s Requests Session."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2024-47081",
+              "help": {
+                "text": "Vulnerability CVE-2024-47081\nSeverity: MEDIUM\nPackage: requests\nFixed Version: 2.32.4\nLink: [CVE-2024-47081](https://avd.aquasec.com/nvd/cve-2024-47081)\nRequests is a HTTP library. Due to a URL parsing issue, Requests releases prior to 2.32.4 may leak .netrc credentials to third parties for specific maliciously-crafted URLs. Users should upgrade to version 2.32.4 to receive a fix. For older versions of Requests, use of the .netrc file can be disabled with `trust_env=False` on one's Requests Session.",
+                "markdown": "**Vulnerability CVE-2024-47081**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|requests|2.32.4|[CVE-2024-47081](https://avd.aquasec.com/nvd/cve-2024-47081)|\n\nRequests is a HTTP library. Due to a URL parsing issue, Requests releases prior to 2.32.4 may leak .netrc credentials to third parties for specific maliciously-crafted URLs. Users should upgrade to version 2.32.4 to receive a fix. For older versions of Requests, use of the .netrc file can be disabled with `trust_env=False` on one's Requests Session."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "5.3",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-25645",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "requests: Requests: Security bypass due to predictable temporary file creation"
+              },
+              "fullDescription": {
+                "text": "Requests is a HTTP library. Prior to version 2.33.0, the `requests.utils.extract_zipped_paths()` utility function uses a predictable filename when extracting files from zip archives into the system temporary directory. If the target file already exists, it is reused without validation. A local attacker with write access to the temp directory could pre-create a malicious file that would be loaded in place of the legitimate one. Standard usage of the Requests library is not affected by this vulnerability. Only applications that call `extract_zipped_paths()` directly are impacted. Starting in version 2.33.0, the library extracts files to a non-deterministic location. If developers are unable to upgrade, they can set `TMPDIR` in their environment to a directory with restricted write access."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-25645",
+              "help": {
+                "text": "Vulnerability CVE-2026-25645\nSeverity: MEDIUM\nPackage: requests\nFixed Version: 2.33.0\nLink: [CVE-2026-25645](https://avd.aquasec.com/nvd/cve-2026-25645)\nRequests is a HTTP library. Prior to version 2.33.0, the `requests.utils.extract_zipped_paths()` utility function uses a predictable filename when extracting files from zip archives into the system temporary directory. If the target file already exists, it is reused without validation. A local attacker with write access to the temp directory could pre-create a malicious file that would be loaded in place of the legitimate one. Standard usage of the Requests library is not affected by this vulnerability. Only applications that call `extract_zipped_paths()` directly are impacted. Starting in version 2.33.0, the library extracts files to a non-deterministic location. If developers are unable to upgrade, they can set `TMPDIR` in their environment to a directory with restricted write access.",
+                "markdown": "**Vulnerability CVE-2026-25645**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|requests|2.33.0|[CVE-2026-25645](https://avd.aquasec.com/nvd/cve-2026-25645)|\n\nRequests is a HTTP library. Prior to version 2.33.0, the `requests.utils.extract_zipped_paths()` utility function uses a predictable filename when extracting files from zip archives into the system temporary directory. If the target file already exists, it is reused without validation. A local attacker with write access to the temp directory could pre-create a malicious file that would be loaded in place of the legitimate one. Standard usage of the Requests library is not affected by this vulnerability. Only applications that call `extract_zipped_paths()` directly are impacted. Starting in version 2.33.0, the library extracts files to a non-deterministic location. If developers are unable to upgrade, they can set `TMPDIR` in their environment to a directory with restricted write access."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "4.4",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2024-47874",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "starlette: Starlette Denial of service (DoS) via multipart/form-data"
+              },
+              "fullDescription": {
+                "text": "Starlette is an Asynchronous Server Gateway Interface (ASGI) framework/toolkit. Prior to version 0.40.0, Starlette treats `multipart/form-data` parts without a `filename` as text form fields and buffers those in byte strings with no size limit. This allows an attacker to upload arbitrary large form fields and cause Starlette to both slow down significantly due to excessive memory allocations and copy operations, and also consume more and more memory until the server starts swapping and grinds to a halt, or the OS terminates the server process with an OOM error. Uploading multiple such requests in parallel may be enough to render a service practically unusable, even if reasonable request size limits are enforced by a reverse proxy in front of Starlette. This Denial of service (DoS) vulnerability affects all applications built with Starlette (or FastAPI) accepting form requests. Verison 0.40.0 fixes this issue."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2024-47874",
+              "help": {
+                "text": "Vulnerability CVE-2024-47874\nSeverity: HIGH\nPackage: starlette\nFixed Version: 0.40.0\nLink: [CVE-2024-47874](https://avd.aquasec.com/nvd/cve-2024-47874)\nStarlette is an Asynchronous Server Gateway Interface (ASGI) framework/toolkit. Prior to version 0.40.0, Starlette treats `multipart/form-data` parts without a `filename` as text form fields and buffers those in byte strings with no size limit. This allows an attacker to upload arbitrary large form fields and cause Starlette to both slow down significantly due to excessive memory allocations and copy operations, and also consume more and more memory until the server starts swapping and grinds to a halt, or the OS terminates the server process with an OOM error. Uploading multiple such requests in parallel may be enough to render a service practically unusable, even if reasonable request size limits are enforced by a reverse proxy in front of Starlette. This Denial of service (DoS) vulnerability affects all applications built with Starlette (or FastAPI) accepting form requests. Verison 0.40.0 fixes this issue.",
+                "markdown": "**Vulnerability CVE-2024-47874**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|starlette|0.40.0|[CVE-2024-47874](https://avd.aquasec.com/nvd/cve-2024-47874)|\n\nStarlette is an Asynchronous Server Gateway Interface (ASGI) framework/toolkit. Prior to version 0.40.0, Starlette treats `multipart/form-data` parts without a `filename` as text form fields and buffers those in byte strings with no size limit. This allows an attacker to upload arbitrary large form fields and cause Starlette to both slow down significantly due to excessive memory allocations and copy operations, and also consume more and more memory until the server starts swapping and grinds to a halt, or the OS terminates the server process with an OOM error. Uploading multiple such requests in parallel may be enough to render a service practically unusable, even if reasonable request size limits are enforced by a reverse proxy in front of Starlette. This Denial of service (DoS) vulnerability affects all applications built with Starlette (or FastAPI) accepting form requests. Verison 0.40.0 fixes this issue."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "0.0",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2025-54121",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "starlette: Starlette denial-of-service"
+              },
+              "fullDescription": {
+                "text": "Starlette is a lightweight ASGI (Asynchronous Server Gateway Interface) framework/toolkit, designed for building async web services in Python. In versions 0.47.1 and below, when parsing a multi-part form with large files (greater than the default max spool size) starlette will block the main thread to roll the file over to disk. This blocks the event thread which means the application can\u0026#39;t accept new connections. The UploadFile code has a minor bug where instead of just checking for self._in_memory, the logic should also check if the additional bytes will cause a rollover. The vulnerability is fixed in version 0.47.2."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2025-54121",
+              "help": {
+                "text": "Vulnerability CVE-2025-54121\nSeverity: MEDIUM\nPackage: starlette\nFixed Version: 0.47.2\nLink: [CVE-2025-54121](https://avd.aquasec.com/nvd/cve-2025-54121)\nStarlette is a lightweight ASGI (Asynchronous Server Gateway Interface) framework/toolkit, designed for building async web services in Python. In versions 0.47.1 and below, when parsing a multi-part form with large files (greater than the default max spool size) starlette will block the main thread to roll the file over to disk. This blocks the event thread which means the application can't accept new connections. The UploadFile code has a minor bug where instead of just checking for self._in_memory, the logic should also check if the additional bytes will cause a rollover. The vulnerability is fixed in version 0.47.2.",
+                "markdown": "**Vulnerability CVE-2025-54121**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|starlette|0.47.2|[CVE-2025-54121](https://avd.aquasec.com/nvd/cve-2025-54121)|\n\nStarlette is a lightweight ASGI (Asynchronous Server Gateway Interface) framework/toolkit, designed for building async web services in Python. In versions 0.47.1 and below, when parsing a multi-part form with large files (greater than the default max spool size) starlette will block the main thread to roll the file over to disk. This blocks the event thread which means the application can't accept new connections. The UploadFile code has a minor bug where instead of just checking for self._in_memory, the logic should also check if the additional bytes will cause a rollover. The vulnerability is fixed in version 0.47.2."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "5.3",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            }
+          ],
+          "version": "0.45.0"
+        }
+      },
+      "results": [
+        {
+          "ruleId": "CVE-2025-8869",
+          "ruleIndex": 0,
+          "level": "warning",
+          "message": {
+            "text": "Package: pip\nInstalled Version: 25.0.1\nVulnerability CVE-2025-8869\nSeverity: MEDIUM\nFixed Version: 25.3\nLink: [CVE-2025-8869](https://avd.aquasec.com/nvd/cve-2025-8869)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/python3.13/site-packages/pip-25.0.1.dist-info/METADATA",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/python3.13/site-packages/pip-25.0.1.dist-info/METADATA: pip@25.0.1"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-1703",
+          "ruleIndex": 1,
+          "level": "note",
+          "message": {
+            "text": "Package: pip\nInstalled Version: 25.0.1\nVulnerability CVE-2026-1703\nSeverity: LOW\nFixed Version: 26.0\nLink: [CVE-2026-1703](https://avd.aquasec.com/nvd/cve-2026-1703)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/python3.13/site-packages/pip-25.0.1.dist-info/METADATA",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/python3.13/site-packages/pip-25.0.1.dist-info/METADATA: pip@25.0.1"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2024-35195",
+          "ruleIndex": 2,
+          "level": "warning",
+          "message": {
+            "text": "Package: requests\nInstalled Version: 2.31.0\nVulnerability CVE-2024-35195\nSeverity: MEDIUM\nFixed Version: 2.32.0\nLink: [CVE-2024-35195](https://avd.aquasec.com/nvd/cve-2024-35195)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/venv/lib/python3.12/site-packages/requests-2.31.0.dist-info/METADATA",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "app/venv/lib/python3.12/site-packages/requests-2.31.0.dist-info/METADATA: requests@2.31.0"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2024-35195",
+          "ruleIndex": 2,
+          "level": "warning",
+          "message": {
+            "text": "Package: requests\nInstalled Version: 2.31.0\nVulnerability CVE-2024-35195\nSeverity: MEDIUM\nFixed Version: 2.32.0\nLink: [CVE-2024-35195](https://avd.aquasec.com/nvd/cve-2024-35195)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/python3.13/site-packages/requests-2.31.0.dist-info/METADATA",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/python3.13/site-packages/requests-2.31.0.dist-info/METADATA: requests@2.31.0"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2024-47081",
+          "ruleIndex": 3,
+          "level": "warning",
+          "message": {
+            "text": "Package: requests\nInstalled Version: 2.31.0\nVulnerability CVE-2024-47081\nSeverity: MEDIUM\nFixed Version: 2.32.4\nLink: [CVE-2024-47081](https://avd.aquasec.com/nvd/cve-2024-47081)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/venv/lib/python3.12/site-packages/requests-2.31.0.dist-info/METADATA",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "app/venv/lib/python3.12/site-packages/requests-2.31.0.dist-info/METADATA: requests@2.31.0"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2024-47081",
+          "ruleIndex": 3,
+          "level": "warning",
+          "message": {
+            "text": "Package: requests\nInstalled Version: 2.31.0\nVulnerability CVE-2024-47081\nSeverity: MEDIUM\nFixed Version: 2.32.4\nLink: [CVE-2024-47081](https://avd.aquasec.com/nvd/cve-2024-47081)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/python3.13/site-packages/requests-2.31.0.dist-info/METADATA",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/python3.13/site-packages/requests-2.31.0.dist-info/METADATA: requests@2.31.0"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-25645",
+          "ruleIndex": 4,
+          "level": "warning",
+          "message": {
+            "text": "Package: requests\nInstalled Version: 2.31.0\nVulnerability CVE-2026-25645\nSeverity: MEDIUM\nFixed Version: 2.33.0\nLink: [CVE-2026-25645](https://avd.aquasec.com/nvd/cve-2026-25645)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/venv/lib/python3.12/site-packages/requests-2.31.0.dist-info/METADATA",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "app/venv/lib/python3.12/site-packages/requests-2.31.0.dist-info/METADATA: requests@2.31.0"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-25645",
+          "ruleIndex": 4,
+          "level": "warning",
+          "message": {
+            "text": "Package: requests\nInstalled Version: 2.31.0\nVulnerability CVE-2026-25645\nSeverity: MEDIUM\nFixed Version: 2.33.0\nLink: [CVE-2026-25645](https://avd.aquasec.com/nvd/cve-2026-25645)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/python3.13/site-packages/requests-2.31.0.dist-info/METADATA",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/python3.13/site-packages/requests-2.31.0.dist-info/METADATA: requests@2.31.0"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2024-47874",
+          "ruleIndex": 5,
+          "level": "error",
+          "message": {
+            "text": "Package: starlette\nInstalled Version: 0.35.1\nVulnerability CVE-2024-47874\nSeverity: HIGH\nFixed Version: 0.40.0\nLink: [CVE-2024-47874](https://avd.aquasec.com/nvd/cve-2024-47874)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/venv/lib/python3.12/site-packages/starlette-0.35.1.dist-info/METADATA",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "app/venv/lib/python3.12/site-packages/starlette-0.35.1.dist-info/METADATA: starlette@0.35.1"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2024-47874",
+          "ruleIndex": 5,
+          "level": "error",
+          "message": {
+            "text": "Package: starlette\nInstalled Version: 0.35.1\nVulnerability CVE-2024-47874\nSeverity: HIGH\nFixed Version: 0.40.0\nLink: [CVE-2024-47874](https://avd.aquasec.com/nvd/cve-2024-47874)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/python3.13/site-packages/starlette-0.35.1.dist-info/METADATA",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/python3.13/site-packages/starlette-0.35.1.dist-info/METADATA: starlette@0.35.1"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2025-54121",
+          "ruleIndex": 6,
+          "level": "warning",
+          "message": {
+            "text": "Package: starlette\nInstalled Version: 0.35.1\nVulnerability CVE-2025-54121\nSeverity: MEDIUM\nFixed Version: 0.47.2\nLink: [CVE-2025-54121](https://avd.aquasec.com/nvd/cve-2025-54121)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/venv/lib/python3.12/site-packages/starlette-0.35.1.dist-info/METADATA",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "app/venv/lib/python3.12/site-packages/starlette-0.35.1.dist-info/METADATA: starlette@0.35.1"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2025-54121",
+          "ruleIndex": 6,
+          "level": "warning",
+          "message": {
+            "text": "Package: starlette\nInstalled Version: 0.35.1\nVulnerability CVE-2025-54121\nSeverity: MEDIUM\nFixed Version: 0.47.2\nLink: [CVE-2025-54121](https://avd.aquasec.com/nvd/cve-2025-54121)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/python3.13/site-packages/starlette-0.35.1.dist-info/METADATA",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/python3.13/site-packages/starlette-0.35.1.dist-info/METADATA: starlette@0.35.1"
+              }
+            }
+          ]
+        }
+      ],
+      "columnKind": "utf16CodeUnits",
+      "originalUriBaseIds": {
+        "ROOTPATH": {
+          "uri": "file:///"
+        }
+      },
+      "properties": {
+        "imageName": "yunglord1/currency_app:10",
+        "repoDigests": [
+          "yunglord1/currency_app@sha256:da103e8402bb567e9f4e69939a58eec469e10a85c5fdd8d01a24b873ff2398dd"
+        ],
+        "repoTags": [
+          "yunglord1/currency_app:10"
+        ]
+      }
+    }
+  ]
+}
