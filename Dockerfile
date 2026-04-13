@@ -8,7 +8,7 @@ WORKDIR /app
 
 COPY requirements.txt .
 RUN apk update && apk upgrade --no-cache && \
-    pip install --no-cache-dir --upgrade pip==25.0.1 && \ 
+    pip install --no-cache-dir --upgrade pip==26.0 && \ 
     pip install --no-cache-dir -r requirements.txt
 
 COPY . .
