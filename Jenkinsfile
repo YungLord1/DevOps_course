@@ -48,20 +48,17 @@ pipeline {
             }
         }
         stage('Security Scan (Trivy)') {
+            when {
+                beforeAgent true
+                expression { 
+                    return (env.gitlabMergeRequestIid != null || env.BRANCH_NAME == 'main' || env.TAG_NAME != null) 
+                }
+            }
             steps {
                 script {
-                    def isMR = (env.gitlabMergeRequestIid != null || env.CHANGE_ID != null)
-                    def isMaster = (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'main')
-                    def isTag = (env.TAG_NAME != null)
-
-                    if (isMR || isMaster || isTag) {
-                        echo "Trigger detected! Running Trivy..."
-                        sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --format sarif --output trivy_report.sarif ${IMAGE_NAME}"
-                        archiveArtifacts artifacts: 'trivy_report.sarif', allowEmptyArchive: true
-                        recordIssues(tools: [sarif(pattern: 'trivy_report.sarif', id: 'trivy', name: 'Trivy SCA Scan')])
-                    } else {
-                        echo "Skipping Trivy scan: Condition not met for branch ${env.BRANCH_NAME}"
-                    }
+                    sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --format sarif --output trivy_report.sarif ${IMAGE_NAME}"
+                    archiveArtifacts artifacts: 'trivy_report.sarif', allowEmptyArchive: true
+                    recordIssues(tools: [sarif(pattern: 'trivy_report.sarif', id: 'trivy', name: 'Trivy SCA Scan')])
                 }
             }
         }
