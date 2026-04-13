@@ -82,7 +82,7 @@ pipeline {
                             sh 'IMAGE_NAME=${FULL_IMAGE} APP_PORT=8000 docker compose -p app-blue --env-file ${S_PATH} up -d'
                         }
 
-                        echo "Cleaning up Green slot...."
+                        echo "Cleaning up Green slot..."
                         sh 'docker compose -p app-green down || true'
                     }
                 }
