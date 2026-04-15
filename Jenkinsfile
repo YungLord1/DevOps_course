@@ -28,20 +28,28 @@ pipeline {
                 script {
                     conditionalStage(name: 'Lint + SAST + Tests', condition: true) {
                         LintSASTTests.setVenv()
-                        parallel{
-                            stage('Linter python'){
+                        parallel(
+                            'Linter python' :{
+                                stage('Linter python'){
                                     LintSASTTests.pyLint()
+                                }
                             }
-                            stage('SAST'){
+                            'SAST': {
+                                stage('SAST'){
                                     LintSASTTests.runSAST()
+                                }
                             }
-                            stage('Unit tests'){
-                                LintSASTTests.unitTests()
+                            'Unit tests' : {
+                                stage('Unit tests'){
+                                    LintSASTTests.unitTests()
+                                }
                             }
-                            stage('Linter docker'){
+                            'Linter docker' : {
+                                stage('Linter docker'){
                                     LintSASTTests.dockerLint()
+                                }
                             }
-                        }
+                        )
                         LintSASTTests.artifJunit()
                     }
                 }
