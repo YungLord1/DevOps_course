@@ -1,4 +1,5 @@
-#!groovy
+@Library('shared-library') _
+
 pipeline {
     agent{label 'staging'}
     environment {
@@ -27,30 +28,30 @@ pipeline {
             steps {
                 script {
                     conditionalStage(name: 'Lint + SAST + Tests', condition: true) {
-                        lintSASTTests.setVenv()
+                        LintSASTTests.setVenv()
                         parallel(
                             'Linter python' :{
                                 stage('Linter python'){
-                                    lintSASTTests.pyLint()
+                                    LintSASTTests.pyLint()
                                 }
                             },
                             'SAST': {
                                 stage('SAST'){
-                                    lintSASTTests.runSAST()
+                                    LintSASTTests.runSAST()
                                 }
                             },
                             'Unit tests' : {
                                 stage('Unit tests'){
-                                    lintSASTTests.unitTests()
+                                    LintSASTTests.unitTests()
                                 }
                             },
                             'Linter docker' : {
                                 stage('Linter docker'){
-                                    lintSASTTests.dockerLint()
+                                    LintSASTTests.dockerLint()
                                 }
                             }
                         )
-                        lintSASTTests.artifJunit()
+                        LintSASTTests.artifJunit()
                     }
                 }
             }
