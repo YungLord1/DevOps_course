@@ -74,7 +74,10 @@ pipeline {
         stage('Security Scan (Trivy)') {
             steps {
                 script {
-                    if (env.BRANCH_NAME.contains('MR-') || env.BRANCH_NAME == 'main' || env.TAG_NAME != null) {
+                    def isTargetBranch = env.BRANCH_NAME.contains('MR-') || env.BRANCH_NAME == 'main' ||
+                                        env.BRANCH_NAME == 'master' || env.TAG_NAME != null
+
+                    conditionalStage(name: 'Security Scan (Trivy)', condition: isTargetBranch) {
                         def trivyImage = env.DEPLOY_TAG
                         echo "Scanning image from build stage: ${trivyImage}"
 
@@ -88,12 +91,12 @@ pipeline {
                             --output trivy_report.sarif \
                             ${trivyImage} || true
                         """
-                        
+
                         if (fileExists('trivy_report.sarif')) {
                             archiveArtifacts artifacts: 'trivy_report.sarif', allowEmptyArchive: true
                             recordIssues(tools: [sarif(pattern: 'trivy_report.sarif', id: 'trivy', name: 'Trivy SCA Scan')])
                         } else {
-                            error "Trivy report was not generated in workspace!"
+                            error "report was not genereated!"
                         }
                     }
                 }
