@@ -22,13 +22,13 @@ pipeline {
                             file(credentialsId: 'ENV_FILE', variable: 'SECRET_FILE_PATH'),
                             usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'U', passwordVariable: 'P')
                         ]) {
-                            echo "Logging into Docker Hub as: ${U}"
+                            echo "Log Docker Hub as: ${U}"
                             sh "echo ${P} | docker login -u ${U} --password-stdin"
                             def fullImageName = params.IMAGE_TAG.contains('/') ? 
                                                 params.IMAGE_TAG : 
                                                 "${U}/currency_app:${params.IMAGE_TAG}"
 
-                            echo "Starting green version: ${fullImageName} on port 8001"
+                            echo "Starting green version: ${fullImageName} on 8001"
 
                             withEnv(["FULL_IMAGE=${fullImageName}", "S_PATH=${SECRET_FILE_PATH}"]) {
                                 sh 'IMAGE_NAME=${FULL_IMAGE} APP_PORT=8001 docker compose -p app-green --env-file ${S_PATH} up -d'
@@ -39,26 +39,35 @@ pipeline {
             }
         }
 
-        stage('Smoke tests') {
+        stage('Smoke tests + DAST') {
             steps {
                 script {
-                    echo "Waiting for Green slot to start..."
+                    echo "Waiting for Green..."
                     sleep 5
-
-                    echo "Running tests against port 8001..."
-                    sh '''
-                        python3 -m venv venv
-                        ./venv/bin/pip install -r requirements.txt
-                        ./venv/bin/python3 -m pytest tests/test_currency_app.py --junitxml=smoke_report.xml
-                    '''
-
-                    sh "curl -f http://localhost:8001/info || exit 1"
+                    parallel(
+                        'Smoke tests': {
+                            stage('Smoke tests') {
+                                echo "Running tests..."
+                                sh '''
+                                    python3 -m venv venv
+                                    ./venv/bin/pip install -r requirements.txt
+                                    ./venv/bin/python3 -m pytest tests/test_currency_app.py --junitxml=smoke_report.xml
+                                '''
+                                sh "curl -f http://localhost:8001/info || exit 1"
+                            }
+                        }
+                        'DAST': {
+                            stage('DAST') {
+                                testsLint.runDAST("http://localhost:8001")
+                            }
+                        }
+                    )
                 }
             }
             post {
                 always {
                     junit 'smoke_report.xml'
-                    archiveArtifacts artifacts: 'smoke_report.xml', fingerprint: true
+                    archiveArtifacts artifacts: 'smoke_report.xml, zap_report.xml', allowEmptyArchive: true
                     echo 'Atrifacts collected'
                 }
             }
@@ -74,15 +83,15 @@ pipeline {
                         file(credentialsId: 'ENV_FILE', variable: 'SECRET_FILE_PATH'),
                         usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'U', passwordVariable: 'P')
                     ]) {
-                        echo "Stopping old Blue version to free port 8000..."
+                        echo "Stopping old Blue"
                         sh 'docker compose -p app-blue down || true'
 
-                        echo "Starting new Blue version: ${fullImageName}"
+                        echo "Starting new Blue ${fullImageName}"
                         withEnv(["FULL_IMAGE=${fullImageName}", "S_PATH=${SECRET_FILE_PATH}"]) {
                             sh 'IMAGE_NAME=${FULL_IMAGE} APP_PORT=8000 docker compose -p app-blue --env-file ${S_PATH} up -d'
                         }
 
-                        echo "Cleaning up Green slot..."
+                        echo "Cleaning green..."
                         sh 'docker compose -p app-green down || true'
                     }
                 }
@@ -91,7 +100,7 @@ pipeline {
     }
     post {
         failure {
-            echo "DEPLOYMENT FAILED! Cleaning up Green slot, Blue remains untouched."
+            echo "DEPLOYMENT FAILED! Cleaning up green"
             sh "docker compose -p app-green down || true"
         }
         always {
