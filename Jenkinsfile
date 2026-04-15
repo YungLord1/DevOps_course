@@ -33,17 +33,17 @@ pipeline {
                                 stage('Linter python'){
                                     LintSASTTests.pyLint()
                                 }
-                            }
+                            },
                             'SAST': {
                                 stage('SAST'){
                                     LintSASTTests.runSAST()
                                 }
-                            }
+                            },
                             'Unit tests' : {
                                 stage('Unit tests'){
                                     LintSASTTests.unitTests()
                                 }
-                            }
+                            },
                             'Linter docker' : {
                                 stage('Linter docker'){
                                     LintSASTTests.dockerLint()
