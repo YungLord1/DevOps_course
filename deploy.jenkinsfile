@@ -55,7 +55,7 @@ pipeline {
                                 '''
                                 sh "curl -f http://localhost:8001/info || exit 1"
                             }
-                        }
+                        },
                         'DAST': {
                             stage('DAST') {
                                 testsLint.runDAST("http://localhost:8001")
