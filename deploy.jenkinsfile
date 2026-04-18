@@ -58,7 +58,7 @@ pipeline {
                         },
                         'DAST': {
                             stage('DAST') {
-                                testsLint.runDAST("http://localhost:8001/info")
+                                testsLint.runDAST("http://localhost:8001")
                             }
                         }
                     )
