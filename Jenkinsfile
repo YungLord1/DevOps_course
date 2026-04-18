@@ -1,163 +1,105 @@
-@Library('shared-library') _
-
+#!groovy
 pipeline {
-    agent{label 'staging'}
+    agent none
     environment {
-        REPO_NAME = "currency_app"
+        REPO_NAME = "imageforpipe"
     }
     options {
         timestamps()
         buildDiscarder(logRotator(numToKeepStr: '5'))
         gitLabConnection('gitlab-server')
-        skipDefaultCheckout()
     }
     triggers {
         gitlab(triggerOnPush: true, triggerOnMergeRequest: true, branchFilterType: 'All')
     }
     stages {
-        stage('Checkout') {
+        stage('Lint') {
+            agent { label 'worker1' }
             steps {
-                script {
-                    conditionalStage(name: 'Checkout', condition: true) {
-                        checkout scm
-                    }
+                echo 'Running linter...'
+                withCredentials([string(credentialsId: 'SUDO_PASS', variable: 'SUDO_PASSWORD')]) {
+                    sh "echo $SUDO_PASSWORD | sudo -S apt-get update && sudo -S apt-get install -y python3-venv"
                 }
+                sh 'python3 -m venv venv'
+                sh './venv/bin/pip install flake8'
+                sh './venv/bin/flake8 . --exclude=venv,.git,__pycache__,.pytest_cache'
+                sleep 2
             }
         }
-        stage('Lint + SAST + Tests'){
+        stage('Unit Tests') {
+            agent { label 'worker1' }
             steps {
-                script {
-                    conditionalStage(name: 'Lint + SAST + Tests', condition: true) {
-                        testsLint.setVenv()
-                        parallel(
-                            'Linter python' :{
-                                stage('Linter python'){
-                                    testsLint.pyLint()
-                                }
-                            },
-                            'SAST': {
-                                stage('SAST'){
-                                    testsLint.runSAST()
-                                }
-                            },
-                            'Unit tests' : {
-                                stage('Unit tests'){
-                                    testsLint.unitTests()
-                                }
-                            },
-                            'Linter docker' : {
-                                stage('Linter docker'){
-                                    testsLint.dockerLint()
-                                }
-                            }
-                        )
-                        testsLint.artifJunit()
-                    }
-                }
+                echo 'Start unit tests...'
+                sh '''
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install -r requirements.txt
+                    pytest test_unit.py --junitxml=unit_report.xml
+                '''
             }
         }
         stage('Build') {
+            agent { label 'worker2' }
             steps {
-                script {
-                    def isMR = (env.gitlabMergeRequestIid != null || env.CHANGE_ID != null)
-                    def isMaster = (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'main')
-                    def isTag = (env.TAG_NAME != null)
-
-                    def buildCond = (isMR || isMaster || isTag)
-
-                    conditionalStage(name: 'Build', condition: buildCond) {
-                        dockerBuild(repoName: env.REPO_NAME)
+                withCredentials([usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    script {
+                        env.DEPLOY_TAG = "${USER}/${REPO_NAME}:${env.BUILD_NUMBER}"
+                        sh "echo $PASS | docker login -u $USER --password-stdin"
+                        sh "docker build -t ${env.DEPLOY_TAG} ."
+                        sh "docker push ${env.DEPLOY_TAG}"
                     }
+                }
+            } 
+        }
+        stage('Deploy') {
+            agent { label 'worker2' }
+            when {
+                branch 'master'
+                beforeInput true
+            }
+            options {
+                timeout(time: 48, unit: 'HOURS')
+            }
+            input{
+                message 'Do u want to deploy?'
+                ok 'Deploy now'
+            }
+            environment {
+                IMAGE_NAME = "${env.DEPLOY_TAG}"
+            }
+            steps {
+                checkout scm
+                withCredentials([file(credentialsId: 'ENV_FILE', variable: 'SECRET_FILE_PATH')]) {
+                    sh '''
+                        echo "Deploy image: $IMAGE_NAME"
+                        docker compose --env-file "$SECRET_FILE_PATH" down --remove-orphans
+                        docker compose --env-file "$SECRET_FILE_PATH" up -d
+                    '''
                 }
             }
         }
-        stage('Security Scan (Trivy)') {
-            steps {
-                script {
-                    conditionalStage(name: 'Lint + SAST + Tests', condition: true) {
-                        def isTargetBranch = env.BRANCH_NAME.contains('MR-') || env.BRANCH_NAME == 'main' ||
-                                            env.BRANCH_NAME == 'master' || env.TAG_NAME != null
-
-                        conditionalStage(name: 'Security Scan (Trivy)', condition: isTargetBranch) {
-                            def trivyImage = env.DEPLOY_TAG
-                            echo "Scanning image from build stage: ${trivyImage}"
-
-                            sh """
-                                docker run --rm \
-                                -v /var/run/docker.sock:/var/run/docker.sock \
-                                -v ${WORKSPACE}:/apps \
-                                -w /apps \
-                                aquasec/trivy:0.45.0 image \
-                                --format sarif \
-                                --output trivy_report.sarif \
-                                ${trivyImage} || true
-                            """
-                        }
-                    }
-                }
+        stage('Integration_tests') {
+            agent { label 'worker1' }
+            when {
+                branch 'master'
             }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'trivy_report.sarif', allowEmptyArchive: true
-                    recordIssues(tools: [sarif(pattern: 'trivy_report.sarif', id: 'trivy', name: 'Trivy SCA Scan')])
-                }
-            }
-        }
-        stage('Push') {
             steps {
-                script {
-                    def isMaster = (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'main')
-                    def isTag = (env.TAG_NAME != null)
-
-                    def pushCond = (isMaster || isTag)
-
-                    conditionalStage(name: 'Push', condition: pushCond) {
-                        dockerPush(deployTag: env.DEPLOY_TAG)
-                    }
-                }
-            }
-        }
-        stage('Deploy to Staging') {
-            steps {
-                script {
-                    def isMaster = (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'main')
-
-                    conditionalStage(name: 'Deploy to Staging', condition: isMaster) {
-                        echo "Target: Staging. Starting Deploy_app job..."
-                        build job: 'Deploy_app',
-                            parameters: [
-                                string(name: 'IMAGE_TAG', value: env.DEPLOY_TAG),
-                                string(name: 'ENVIRONMENT', value: 'staging')
-                            ],
-                            wait: true,
-                            propagate: true
-                    }
-                }
-            }
-        }
-
-        stage('Deploy to Production') {
-            steps {
-                script {
-                    def isTag = (env.TAG_NAME != null)
-
-                    conditionalStage(name: 'Deploy to Production', condition: isTag) {
-                        echo "Target: Production. Starting Deploy_app job..."
-                        build job: 'Deploy_app',
-                            parameters: [
-                                string(name: 'IMAGE_TAG', value: env.DEPLOY_TAG),
-                                string(name: 'ENVIRONMENT', value: 'production')
-                            ],
-                            wait: true,
-                            propagate: true
-                    }
-                }
+                echo 'Running tests...'
+                sh '''
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install -r requirements.txt
+                    pytest test_currency_app.py --junitxml=integration_report.xml
+                '''
             }
         }
     }
     post {
         always {
-            cleanWs()
+            node ('worker2'){
+                sh 'IMAGE_NAME=cleanup docker compose down --remove-orphans -v'
+                sh 'docker system prune -f'
+            }
         }
         success {
             updateGitlabCommitStatus(name: 'jenkins', state: 'success')

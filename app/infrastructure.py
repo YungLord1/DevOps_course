@@ -5,8 +5,6 @@ from typing import Optional, List
 from app.domain import CurrencyRate, CurrencyRepository
 
 # реализация репозитория для получения курсов валют с ЦБ РФ
-
-
 class CbrRepository(CurrencyRepository):
     def __init__(self, base_url: str):
         self.base_url = base_url
