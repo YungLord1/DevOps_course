@@ -20,7 +20,7 @@ class CbrRepository(CurrencyRepository):
             date_str = rate_date.strftime("%d/%m/%Y")
             url = f"{self.base_url}?date_req={date_str}"
 
-        # Асинхронный HTTP-запрос
+        # асинхронный HTTP-запрос
         async with httpx.AsyncClient() as client:
             try:
                 resp = await client.get(url)
