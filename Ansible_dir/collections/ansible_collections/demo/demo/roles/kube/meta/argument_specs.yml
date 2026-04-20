@@ -1,0 +1,11 @@
+---
+# argument spec file for demo.demo.kube
+
+argument_specs:
+  main:
+    short_description: Role description.
+    options:
+      kube_my_variable:
+        type: str
+        description: A simple string argument for demonstration.
+        default: "default_value"

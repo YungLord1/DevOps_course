@@ -1,0 +1,10 @@
+---
+- name: Push cri-o and kubelet on all servers
+  hosts: myVMs
+  become: true
+  environment: "{{ my_proxy }}"
+  roles:
+    - role: cri_o
+      tags: crio
+#    - role: kube
+#      tags: k8s

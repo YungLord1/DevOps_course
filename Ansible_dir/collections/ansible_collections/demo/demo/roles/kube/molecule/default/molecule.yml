@@ -1,0 +1,24 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: instance
+    image: geerlingguy/docker-ubuntu2204-ansible:latest
+    privileged: true
+    pre_build_image: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    cgroupns_mode: host
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      interpreter_python: auto_silent
+      roles_path: "../../../"
+  env:
+    http_proxy: "{{ lookup('env', 'http_proxy') | default('', true) }}"
+    https_proxy: "{{ lookup('env', 'https_proxy') | default('', true) }}"
+verifier:
+  name: testinfra

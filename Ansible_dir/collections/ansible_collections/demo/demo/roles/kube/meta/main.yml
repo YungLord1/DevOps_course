@@ -1,0 +1,16 @@
+---
+galaxy_info:
+  author: Ivan Chach
+  description: Installation pkgs k8s for Ubuntu 24.04
+  company: Chach Industries
+  license: GPL-2.0-or-later
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - noble
+  galaxy_tags:
+    - kubernetes
+
+dependencies: []
+

@@ -1,0 +1,22 @@
+[crio]
+#Place, where cri-o saves container data, use vars from defaults
+root = "{{ cri_o_crio_root }}"
+runroot = "{{ cri_o_crio_runroot }}"
+
+#Must have. use systemd
+[crio.runtime]
+cgroup_manager = "systemd"
+conmon_cgroup = "pod"
+
+runtime_endpoint = "{{ cri_o_runtime_endpoint }}"
+
+[crio.network]
+network_dir = "/etc/cni/net.d"
+plugin_dirs = [
+    "/opt/cni/bin/",
+]
+
+[crio.image]
+#storage driver overlay
+storage_driver = "{{ cri_o_crio_storage_driver }}"
+

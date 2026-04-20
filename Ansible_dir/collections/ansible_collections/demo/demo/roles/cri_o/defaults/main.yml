@@ -1,0 +1,26 @@
+---
+# defaults file for demo.demo.cri-o
+
+# Variable that will be displayed in debug output
+# This demonstrates proper role variable naming with the 'run_' prefix
+cri_o_my_variable: "default_value"
+
+#version of CRI
+cri_o_version: "1.32"
+
+cri_o_crio_root: "/var/lib/containers/storage"
+cri_o_crio_runroot:  "/run/containers/storage"
+cri_o_crio_storage_driver: overlay
+
+#endpoint of CRI cont runtime
+cri_o_runtime_endpoint: unix:///var/run/crio/crio.sock
+
+#modules for kernel
+cri_o_modprobe:
+  - { state: present, option: br_netfilter }
+  - { state: present, option: overlay }
+
+cri_o_sysctl:
+  - { state: present, name: net.bridge.bridge-nf-call-iptables, value: "1" }
+  - { state: present, name: net.ipv4.ip_forward, value: "1" }
+  - { state: present, name: vm.swappiness, value: "0" }

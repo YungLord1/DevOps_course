@@ -1,0 +1,31 @@
+---
+# defaults file for demo.demo.kube
+
+# Variable that will be displayed in debug output
+# This demonstrates proper role variable naming with the 'run_' prefix
+kube_my_variable: "default_value"
+
+k8s_version: '1.32'
+
+#base utilits from lecture
+k8s_base_packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release
+
+#present - default state
+k8s_packages:
+  - kubelet
+  - kubeadm
+  - kubectl
+
+#path for keyring
+k8s_keyring_file: /etc/apt/keyrings/kubernetes-apt-keyring.asc
+k8s_repo_definition: "deb [signed-by={{ k8s_keyring_file }}] https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/ /"
+
+#add proxy
+my_proxy:
+  http_proxy: "http://S5edRzj5:hYGUBBWY@88.214.49.71:62800"
+  https_proxy: "http://S5edRzj5:hYGUBBWY@88.214.49.71:62800"
+  no_proxy: "localhost, 127.0.0.1,10.184.0.0/24" 

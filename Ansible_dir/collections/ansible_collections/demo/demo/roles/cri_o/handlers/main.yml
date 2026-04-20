@@ -1,0 +1,11 @@
+---
+# handlers file for demo.demo.cri-o
+- name: cri_o | restart modules
+  ansible.builtin.service:
+    name: systemd-modules-load
+    state: restarted
+
+- name: cri_o | restart service
+  ansible.builtin.service:
+    name: crio
+    state: restarted

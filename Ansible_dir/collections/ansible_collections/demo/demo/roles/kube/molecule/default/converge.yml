@@ -1,0 +1,12 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Include crio role
+      ansible.builtin.include_role:
+        name: cri_o #trying tests 2 roles in 1 molecule
+
+    - name: Include Kube role
+      ansible.builtin.include_role:
+        name: kube #trying tests 2 roles in 1 molecule
