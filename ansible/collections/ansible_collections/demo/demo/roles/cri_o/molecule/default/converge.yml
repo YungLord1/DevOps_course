@@ -1,0 +1,10 @@
+---
+- name: Converge role cri-o
+  hosts: all
+  vars_files:
+    - /home/master/ansible_5/demo/collections/ansible_collections/demo/demo/vars_vault/vault_proxy.yml
+  gather_facts: true
+  tasks:
+    - name: Include cri_o
+      include_role:
+        name: cri_o

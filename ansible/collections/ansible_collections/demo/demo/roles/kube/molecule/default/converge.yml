@@ -1,0 +1,10 @@
+---
+- name: Molecule converge role kube
+  hosts: all
+  vars_files:
+    - /home/master/ansible_5/demo/collections/ansible_collections/demo/demo/vars_vault/vault_proxy.yml
+  gather_facts: true
+  tasks:
+    - name: Include Kube role
+      ansible.builtin.include_role:
+        name: kube

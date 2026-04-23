@@ -1,0 +1,24 @@
+---
+- name: Install GPG key k8s
+  ansible.builtin.get_url:
+    url: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/Release.key"
+    dest: "{{ k8s_keyring_file }}"
+    mode: '0644'
+  environment:
+    http_proxy: "{{ my_proxy.http_proxy }}"
+    https_proxy: "{{ my_proxy.https_proxy }}"
+  tags:
+    - k8s_repo
+
+- name: Add apt repository
+  ansible.builtin.apt_repository:
+    repo: "{{ k8s_repo_definition }}"
+    state: present
+    filename: kubernetes
+    update_cache: true
+    validate_certs: false
+  environment:
+    http_proxy: "{% if 'http' not in my_proxy.http_proxy %}http://{% endif %}{{ my_proxy.http_proxy }}"
+    https_proxy: "{% if 'http' not in my_proxy.https_proxy %}http://{% endif %}{{ my_proxy.https_proxy }}"
+  tags:
+    - k8s_repo
