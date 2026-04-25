@@ -1,0 +1,31 @@
+---
+- name: Prepare system for K8s tests
+  hosts: all
+  gather_facts: true
+#  vars_files:
+#    - /home/master/ansible_5/demo/collections/ansible_collections/demo/demo/vars_vault/vault_proxy.yml
+  tasks:
+    - name: No-op task
+      ansible.builtin.debug:
+        msg: "System is ready!"
+#    - name: Configure Proxy for APT
+#      ansible.builtin.copy:
+#        dest: /etc/apt/apt.conf.d/99proxy
+#        content: |
+#          Acquire::http::Proxy "{{ my_proxy.http_proxy }}";
+#          Acquire::https::Proxy "{{ my_proxy.https_proxy }}";
+#
+#          Acquire::http::Proxy::pkgs.k8s.io "{{ my_proxy.http_proxy }}";
+#          Acquire::https::Proxy::pkgs.k8s.io "{{ my_proxy.https_proxy }}";
+#      become: true
+#      when: my_proxy is defined
+#
+#    - name: Update cache and install base packs
+#      ansible.builtin.apt:
+#        name:
+#          - curl
+#          - gnupg
+#          - ca-certificates
+#          - apt-transport-https
+#        state: present
+#        update_cache: true

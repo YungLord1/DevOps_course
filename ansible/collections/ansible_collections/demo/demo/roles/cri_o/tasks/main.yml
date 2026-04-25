@@ -1,0 +1,93 @@
+---
+# tasks file for demo.demo.cri-o
+
+- name: Prepare directories
+  ansible.builtin.file:
+    dest: "{{item.dest}}"
+    state: directory
+    owner: root
+    group: root
+    mode: "{{item.mode | default('0755') }}"
+  loop:
+   - { dest: /etc/crio/crio.conf.d }
+   - { dest: /etc/modules-load.d }
+   - { dest: /etc/apt/keyrings }
+
+- name: Configure modules for kernel
+  community.general.ini_file:
+    path: /etc/modules-load.d/crio.conf
+    section: ""
+    option: "{{ item.option }}"
+    state: "{{ item.state | default('present') }}"
+    allow_no_value: true
+    mode: "0644"
+  loop: "{{ cri_o_modprobe }}"
+  notify:
+    - cri_o | restart modules
+
+- name: cri_o | activate modprobe
+  community.general.modprobe:
+    name: "{{ item.option }}"
+    state: present
+  loop: "{{ cri_o_modprobe }}"
+
+- name: Apply systemctl settings
+  ansible.posix.sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: "{{ item.state | default ('present') }}"
+    sysctl_file: /etc/sysctl.d/k8s.conf
+    reload: true
+  loop: "{{ cri_o_sysctl }}"
+
+- name: Trust Kubernetes signing key
+  ansible.builtin.apt_key:
+    url: 'https://pkgs.k8s.io/core:/stable:/v{{ cri_o_version }}/deb/Release.key'
+    state: present
+    validate_certs: false
+  environment:
+    http_proxy: "{% if 'http' not in my_proxy.http_proxy %}http://{% endif %}{{ my_proxy.http_proxy }}"
+    https_proxy: "{% if 'http' not in my_proxy.https_proxy %}http://{% endif %}{{ my_proxy.https_proxy }}"
+  become: true
+  retries: 3
+
+- name: ADD cri-o repo
+  ansible.builtin.apt_repository:
+    repo: "deb https://pkgs.k8s.io/core:/stable:/v{{ cri_o_version }}/deb/ /"
+    state: present
+    filename: cri-o
+    update_cache: false
+  environment:
+    http_proxy: "{% if 'http' not in my_proxy.http_proxy %}http://{% endif %}{{ my_proxy.http_proxy }}"
+    https_proxy: "{% if 'http' not in my_proxy.https_proxy %}http://{% endif %}{{ my_proxy.https_proxy }}"
+
+- name: Install cri-o package
+  ansible.builtin.get_url:
+    url: "https://prod-cdn.packages.k8s.io/repositories/isv:/kubernetes:/addons:/cri-o:/stable:/v{{ cri_o_version }}/deb/amd64/cri-o_1.32.1-1.1_amd64.deb"
+    dest: "/tmp/cri-o.deb"
+    mode: '0644'
+    validate_certs: false
+  environment:
+    http_proxy: "{{ my_proxy.http_proxy }}"
+    https_proxy: "{{ my_proxy.https_proxy }}"
+  register: download_pkg
+
+- name: Install cri-o package from local file
+  ansible.builtin.apt:
+    deb: "/tmp/cri-o.deb"
+    state: present
+  become: true
+
+- name: Add logic from  jinja template
+  ansible.builtin.template:
+    src: etc/crio/crio.conf.d/99-defaults.conf.j2
+    dest: /etc/crio/crio.conf.d/99-defaults.conf
+    mode: '0644'
+  notify:
+    - cri_o | restart service
+
+- name: start crio
+  ansible.builtin.service:
+    name: crio.service
+    state: started
+    enabled: true
