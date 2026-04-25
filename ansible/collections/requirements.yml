@@ -1,0 +1,18 @@
+---
+collections:
+  - name: ansible.posix
+    version: 1.4.0
+
+  - name: ansible.scm
+    version: 3.1.0
+
+  - name: ansible.utils
+    version: 4.0.0
+
+  - name: cisco.ios
+
+  - name: https://github.com/redhat-cop/network.backup
+    type: git
+
+  - name: community.general
+    version: 10.7.6

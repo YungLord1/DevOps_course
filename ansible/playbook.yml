@@ -1,0 +1,14 @@
+---
+- name: Push cri-o and kubelet on all servers
+  hosts: myVMs
+  vars_files:
+    - /home/master/ansible_5/demo/collections/ansible_collections/demo/demo/vars_vault/vault_proxy.yml
+  become: true
+  environment:
+    http_proxy: "{{ my_proxy.http_proxy }}"
+    https_proxy: "{{ my_proxy.https_proxy }}"
+  roles:
+    - role: cri_o
+      tags: crio
+    - role: kube
+      tags: k8s

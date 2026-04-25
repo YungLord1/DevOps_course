@@ -1,0 +1,12 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: false
+  tasks:
+  - name: Install kmod for modprobe and gnupg for apt_key
+    ansible.builtin.apt:
+      name:
+        - kmod
+        - gnupg
+      state: present
+      update_cache: true

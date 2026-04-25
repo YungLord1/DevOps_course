@@ -1,0 +1,48 @@
+---
+- name: Set proxy for apt
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/99proxy
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      Acquire::http::Proxy "{% if 'http' not in my_proxy.http_proxy %}http://{% endif %}{{ my_proxy.http_proxy }}/";
+      Acquire::https::Proxy "{% if 'http' not in my_proxy.https_proxy %}http://{% endif %}{{ my_proxy.https_proxy }}/";
+      Acquire::https::Verify-Peer "false";
+      Acquire::https::Verify-Host "false";
+  become: true
+  when: my_proxy is defined
+
+- name: Create dir for keys
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+  tags:
+    - k8s_install
+    - k8s_prepare
+
+- name: Update packages
+  ansible.builtin.apt:
+    update_cache: true
+    force_apt_get: true
+  environment:
+    http_proxy: "{{ my_proxy.no_proxy }}"
+    https_proxy: "{{ my_proxy.no_proxy }}"
+  become: true
+
+- name: Install base pkgs
+  ansible.builtin.package:
+    name: "{{ k8s_base_packages }}"
+    state: present
+    update_cache: false
+  environment:
+    http_proxy: "{% if 'http' not in my_proxy.http_proxy %}http://{% endif %}{{ my_proxy.http_proxy }}"
+    https_proxy: "{% if 'http' not in my_proxy.https_proxy %}http://{% endif %}{{ my_proxy.https_proxy }}"
+  become: true
+  tags:
+    - k8s_install
+    - k8s_prepare
+

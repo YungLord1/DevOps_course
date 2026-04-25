@@ -1,0 +1,29 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: instance
+    image: geerlingguy/docker-ubuntu2204-ansible:latest
+    privileged: true
+    command: /lib/systemd/systemd
+    pre_build_image: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    tmpfs:
+      - /run
+      - /run/lock
+      - /tmp
+    cgroupns_mode: host
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      vault_password_file: /home/master/ansible_5/demo/collections/ansible_collections/demo/demo/vars_vault/vault_pass
+      interpreter_python: auto_silent
+      roles_path: "../../../"
+  ansible_args:
+    - --vault-password-file=/home/master/ansible_5/demo/collections/ansible_collections/demo/demo/vars_vault/vault_pass
+verifier:
+  name: testinfra
