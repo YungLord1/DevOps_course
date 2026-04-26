@@ -1,0 +1,11 @@
+---
+# argument spec file for demo.demo.cluster_up
+
+argument_specs:
+  main:
+    short_description: Role description.
+    options:
+      cluster_up_my_variable:
+        type: str
+        description: A simple string argument for demonstration.
+        default: "default_value"

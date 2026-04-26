@@ -1,0 +1,6 @@
+---
+# handlers file for demo.demo.cluster_up
+- name: Restart crio
+  ansible.builtin.systemd:
+    name: crio
+    state: restarted
