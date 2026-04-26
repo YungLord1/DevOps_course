@@ -196,3 +196,4 @@ sudo crictl pull mirror.gcr.io/kubernetesui/metrics-scraper:v1.0.8
 ## Спасибо за проверку, хорошего дня!
 
 ![Я, когда понял, что внешняя ВМ не будет пинговать ВМки YADRO](https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExcHRxcnprMG93ZmJhZ29yaTQ3YTYzNGhtNzAxank3ZndyOHlyMHRzMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/zOvBKUUEERdNm/giphy.gif)
+# Я, когда спустя час понял, что внешняя ВМ не сможет пинговать ВМки YADRO
