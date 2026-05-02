@@ -31,6 +31,7 @@ pipeline {
                             echo "Starting green version: ${fullImageName} on 8001"
 
                             withEnv(["FULL_IMAGE=${fullImageName}", "S_PATH=${SECRET_FILE_PATH}"]) {
+                                sh 'export DOCKER_HOST=unix:///run/podman/podman.sock'
                                 sh 'IMAGE_NAME=${FULL_IMAGE} APP_PORT=8001 podman compose -p app-green --env-file ${S_PATH} up -d'
                             }
                         }
