@@ -1,0 +1,15 @@
+---
+# tasks file for demo.demo.cluster_up
+
+- name: Disable swap
+  ansible.builtin.command: swapoff -a
+  when: ansible_swaptotal_mb > 0
+
+- name: Allow NET_RAW
+  ansible.builtin.copy:
+    dest: /etc/crio/crio.conf.d/99-defaults.conf
+    content: |
+      [crio.runtime]
+      default_capabilities = ["CHOWN", "DAC_OVERRIDE", "FSETID", "FOWNER", "SETGID", "SETUID", "NET_BIND_SERVICE", "KILL", "NET_RAW"]
+    mode: '0644'
+  notify: Restart crio

@@ -4,11 +4,33 @@
   vars_files:
     - /home/master/ansible_5/demo/collections/ansible_collections/demo/demo/vars_vault/vault_proxy.yml
   become: true
-  environment:
-    http_proxy: "{{ my_proxy.http_proxy }}"
-    https_proxy: "{{ my_proxy.https_proxy }}"
+#  environment:
+#    http_proxy: "{{ my_proxy.http_proxy }}"
+#    https_proxy: "{{ my_proxy.https_proxy }}"
   roles:
     - role: cri_o
       tags: crio
     - role: kube
       tags: k8s
+    - role: cluster_up
+      tags: cluster
+
+- name: Setup master
+  hosts: master
+  become: true
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    no_proxy: "*"
+  tasks:
+    - ansible.builtin.include_tasks:
+        file: /home/master/ansible_5/demo/collections/ansible_collections/demo/demo/roles/cluster_up/tasks/master.yml
+  tags: cluster
+
+- name: Join workers
+  hosts: workers
+  become: true
+  tasks:
+    - ansible.builtin.include_tasks:
+        file: /home/master/ansible_5/demo/collections/ansible_collections/demo/demo/roles/cluster_up/tasks/workers.yml
+  tags: cluster
