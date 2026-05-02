@@ -23,7 +23,7 @@ pipeline {
                             usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'U', passwordVariable: 'P')
                         ]) {
                             echo "Log Docker Hub as: ${U}"
-                            sh "echo ${P} | docker login -u ${U} --password-stdin"
+                            sh "echo ${P} | podman login -u ${U} --password-stdin"
                             def fullImageName = params.IMAGE_TAG.contains('/') ? 
                                                 params.IMAGE_TAG : 
                                                 "${U}/currency_app:${params.IMAGE_TAG}"
@@ -31,7 +31,7 @@ pipeline {
                             echo "Starting green version: ${fullImageName} on 8001"
 
                             withEnv(["FULL_IMAGE=${fullImageName}", "S_PATH=${SECRET_FILE_PATH}"]) {
-                                sh 'IMAGE_NAME=${FULL_IMAGE} APP_PORT=8001 docker compose -p app-green --env-file ${S_PATH} up -d'
+                                sh 'IMAGE_NAME=${FULL_IMAGE} APP_PORT=8001 podman compose -p app-green --env-file ${S_PATH} up -d'
                             }
                         }
                     }
@@ -84,15 +84,15 @@ pipeline {
                         usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'U', passwordVariable: 'P')
                     ]) {
                         echo "Stopping old Blue"
-                        sh 'docker compose -p app-blue down || true'
+                        sh 'podman compose -p app-blue down || true'
 
                         echo "Starting new Blue ${fullImageName}"
                         withEnv(["FULL_IMAGE=${fullImageName}", "S_PATH=${SECRET_FILE_PATH}"]) {
-                            sh 'IMAGE_NAME=${FULL_IMAGE} APP_PORT=8000 docker compose -p app-blue --env-file ${S_PATH} up -d'
+                            sh 'IMAGE_NAME=${FULL_IMAGE} APP_PORT=8000 podman compose -p app-blue --env-file ${S_PATH} up -d'
                         }
 
                         echo "Cleaning green..."
-                        sh 'docker compose -p app-green down || true'
+                        sh 'podman compose -p app-green down || true'
                     }
                 }
             }
@@ -101,10 +101,10 @@ pipeline {
     post {
         failure {
             echo "DEPLOYMENT FAILED! Cleaning up green"
-            sh "docker compose -p app-green down || true"
+            sh "podman compose -p app-green down || true"
         }
         always {
-            sh 'docker system prune -f'
+            sh 'podman system prune -f'
             cleanWs()
         }
     }
