@@ -57,9 +57,6 @@ Traefik выступает в роли **Ingress-контроллера**.
 
 Для проверки домашнего задания можно подключиться к подсети компании и вбить в поисковкую строку следующие запросы:
 
-1. http://chach.industry.com/info
-2. http://chach.industry.com/info/currency
-3. http://chach.industry.com/info/currency?currency?currency=USD&date=2022-01-17
-4. https://chach.industry.com/info
-5. https://chach.industry.com/info/currency
-6. https://chach.industry.com/info/currency?currency?currency=USD&date=2022-01-17
+1. https://chach.industry.com/info
+2. https://chach.industry.com/info/currency
+3. https://chach.industry.com/info/currency?currency?currency=USD&date=2022-01-17
