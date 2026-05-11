@@ -20,12 +20,15 @@ pipeline {
                 script {
                     echo "Fetching Helm 4..."
                     sh '''
+                        echo "Fetching Helm 4..."
                         curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
                         chmod 700 get_helm.sh
                         export HELM_INSTALL_DIR=$(pwd)
                         USE_SUDO=false ./get_helm.sh --no-sudo || true
+                        chmod +x ./helm
 
-                    ls -l ./helm
+                        echo "Check file permissions:"
+                        ls -l ./helm
                     '''
 
                     withCredentials([
