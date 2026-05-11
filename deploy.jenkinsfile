@@ -70,38 +70,58 @@ pipeline {
         stage('Smoke tests + DAST') {
             steps {
                 script {
-                    echo "Waiting for pods to be ready and opening tunnel..."
+                    echo "Checking for existing tunnels and cleaning up..."
+                    sh "pkill -f 'port-forward svc/myapp-service' || true"
 
-                    sh "kubectl port-forward svc/myapp-service 8001:8000 -n staging > pf.log 2>&1 & echo \$! > pf.pid"
-                    sleep 5
+                    echo "Opening tunnel: Jenkins:8001 -> K8s:8000..."
+                    sh "kubectl port-forward svc/myapp-service 8001:8000 -n staging --address 127.0.0.1 > pf.log 2>&1 & echo \$! > pf.pid"
 
-                    env.APP_URL = "http://localhost:8001"
+                    echo "Waiting for port 8001 to open..."
+                    sh '''
+                        count=0
+                        until nc -z 127.0.0.1 8001 || [ $count -eq 15 ]; do
+                          sleep 1
+                          ((count++))
+                        done
+                        if ! nc -z 127.0.0.1 8001; then
+                          echo "ERROR: Tunnel failed to open. Content of pf.log:"
+                          cat pf.log
+                          exit 1
+                        fi
+                    '''
+
+                    def localUrl = "http://127.0.0.1:8001"
+                    env.APP_URL = localUrl
 
                     try {
                         parallel(
                             'Smoke tests': {
-                                sh '''
+                                sh """
                                     python3 -m venv venv
                                     ./venv/bin/pip install -r requirements.txt
-                                    APP_URL=${APP_URL} ./venv/bin/python3 -m pytest tests/test_currency_app.py --junitxml=smoke_report.xml
+                                    APP_URL=${localUrl} ./venv/bin/python3 -m pytest tests/test_currency_app.py --junitxml=smoke_report.xml
 
-                                    echo "Checking health with curl..."
-                                    curl -f ${APP_URL}/info || exit 1
-                                '''
+                                    echo "Final healthcheck with curl..."
+                                    curl -v -f ${localUrl}/info || exit 1
+                                """
                             },
                             'DAST': {
-                                testsLint.runDAST(env.APP_URL)
+                                testsLint.runDAST(localUrl)
                             }
                         )
                     } finally {
-                        sh "kill \$(cat pf.pid) || true"
+                        echo "Cleaning up tunnel..."
+                        if (fileExists('pf.pid')) {
+                            sh "kill \$(cat pf.pid) || true"
+                        }
+                        sh "pkill -f 'port-forward svc/myapp-service' || true"
                     }
                 }
             }
             post {
                 always {
                     junit 'smoke_report.xml'
-                    archiveArtifacts artifacts: 'smoke_report.xml, zap_report.xml', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'smoke_report.xml, zap_report.xml, pf.log', allowEmptyArchive: true
                 }
             }
         }
