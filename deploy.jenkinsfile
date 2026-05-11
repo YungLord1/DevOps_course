@@ -25,7 +25,7 @@ pipeline {
                         export HELM_INSTALL_DIR=$(pwd)
                         USE_SUDO=false ./get_helm.sh --no-sudo || true
 
-                        ls -l ./helm
+                    ls -l ./helm
                     '''
 
                     withCredentials([
