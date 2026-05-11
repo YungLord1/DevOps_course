@@ -91,11 +91,13 @@ pipeline {
         stage('Smoke test') {
             steps {
                 script {
+                    def kubeconfig = env.KUBECONFIG
+
                     sh "pkill -f 'port-forward svc/myapp-service' || true"
 
                     sh """
-                        KUBECONFIG=${env.KUBECONFIG} kubectl port-forward \
-                            svc/myapp-service 8001:8000 \
+                        export KUBECONFIG=${kubeconfig}
+                        kubectl port-forward svc/myapp-service 8001:8000 \
                             -n ${params.ENVIRONMENT} \
                             --address 127.0.0.1 > pf.log 2>&1 &
                         echo \$! > pf.pid
@@ -165,11 +167,11 @@ pipeline {
     post {
         failure {
             script {
-                echo "DEPLOYMENT FAILED! Rolling back..."
                 sh """
-                    KUBECONFIG=${env.KUBECONFIG} /tmp/helm rollback ${env.RELEASE_NAME} 0 \
+                    export KUBECONFIG=${env.KUBECONFIG}
+                    /tmp/helm rollback ${env.RELEASE_NAME} 0 \
                         --namespace ${params.ENVIRONMENT} \
-                        --wait || echo 'Rollback failed or no previous release'
+                        --wait || echo 'Rollback failed'
                 """
             }
         }
