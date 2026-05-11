@@ -24,6 +24,8 @@ pipeline {
                         chmod 700 get_helm.sh
                         export HELM_INSTALL_DIR=$(pwd)
                         USE_SUDO=false ./get_helm.sh --no-sudo || true
+
+                        ls -l ./helm
                     '''
 
                     withCredentials([
@@ -35,7 +37,7 @@ pipeline {
                         sh 'cp "${TLS_KEY_FILE}" "${CHART_PATH}/tls.key"'
 
                         def fullImageName = params.IMAGE_TAG.contains('/') ?
-                                            params.IMAGE_TAG :
+                                            params.IMAGE_TAG : 
                                             "${U}/currency_app:${params.IMAGE_TAG}"
 
                         def repo = fullImageName.split(':')[0]
@@ -44,7 +46,7 @@ pipeline {
                         echo "Deploying with Helm 4..."
 
                         sh """
-                        ./helm_bin upgrade --install ${env.RELEASE_NAME} ${env.CHART_PATH} \
+                        ./helm upgrade --install ${env.RELEASE_NAME} ${env.CHART_PATH} \
                             --namespace ${params.ENVIRONMENT} \
                             --create-namespace \
                             --set image.repository=${repo} \
