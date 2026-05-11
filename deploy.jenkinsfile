@@ -3,9 +3,10 @@
 pipeline {
     agent { label "${params.ENVIRONMENT}" }
     environment {
-        DOCKER_HOST = "unix:///run/podman/podman.sock"
+        DOCKER_HOST  = "unix:///run/podman/podman.sock"
         RELEASE_NAME = "currency-app"
         CHART_PATH = "helm/currency-app"
+        KUBECONFIG = "${WORKSPACE}/kubeconfig.conf"
     }
 
     parameters {
@@ -23,16 +24,14 @@ pipeline {
         stage('Install Helm') {
             steps {
                 sh '''
-                    if ! command -v helm &> /dev/null; then
-                        echo "Helm not found, installing to /tmp..."
+                    if ! /tmp/helm version &> /dev/null; then
+                        echo "Installing Helm to /tmp..."
                         curl -fsSL -o /tmp/get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
                         chmod 700 /tmp/get_helm.sh
                         HELM_INSTALL_DIR=/tmp USE_SUDO=false /tmp/get_helm.sh --no-sudo || true
                         chmod +x /tmp/helm
-                    else
-                        echo "Helm already installed: $(helm version --short)"
                     fi
-                    /tmp/helm version || helm version
+                    /tmp/helm version
                 '''
             }
         }
@@ -48,8 +47,8 @@ pipeline {
                                          usernameVariable: 'DOCKER_USER',
                                          passwordVariable: 'DOCKER_PASS')
                     ]) {
-                        env.KUBECONFIG = KUBE_CONFIG_FILE
-                        env.DOCKER_USER = DOCKER_USER
+                        sh "cp ${KUBE_CONFIG_FILE} ${WORKSPACE}/kubeconfig.conf"
+                        sh "chmod 600 ${WORKSPACE}/kubeconfig.conf"
 
                         def cleanTag = params.IMAGE_TAG.contains(':')
                             ? params.IMAGE_TAG.split(':')[-1]
@@ -57,8 +56,7 @@ pipeline {
                         def repository = "${DOCKER_USER}/currency_app"
 
                         sh """
-                            export KUBECONFIG=${KUBE_CONFIG_FILE}
-                            cat ${KUBE_CONFIG_FILE}
+                            export KUBECONFIG=${WORKSPACE}/kubeconfig.conf
 
                             cp ${TLS_CRT_FILE} ${CHART_PATH}/tls.crt
                             cp ${TLS_KEY_FILE} ${CHART_PATH}/tls.key
@@ -92,14 +90,13 @@ pipeline {
         stage('Smoke test') {
             steps {
                 script {
-                    def kubeconfig = env.KUBECONFIG
-
                     sh "pkill -f 'port-forward svc/myapp-service' || true"
 
                     sh """
-                        ls -la \${KUBECONFIG} || echo "KUBECONFIG FILE NOT FOUND"
-                        kubectl --kubeconfig=\${KUBECONFIG} get pods -n ${params.ENVIRONMENT}
-                        kubectl --kubeconfig=\${KUBECONFIG} port-forward svc/myapp-service 8001:8000 \
+                        export KUBECONFIG=${WORKSPACE}/kubeconfig.conf
+                        echo "Using kubeconfig: \$KUBECONFIG"
+                        kubectl get pods -n ${params.ENVIRONMENT}
+                        kubectl port-forward svc/myapp-service 8001:8000 \
                             -n ${params.ENVIRONMENT} \
                             --address 127.0.0.1 > pf.log 2>&1 &
                         echo \$! > pf.pid
@@ -170,15 +167,16 @@ pipeline {
         failure {
             script {
                 sh """
-                    export KUBECONFIG=${env.KUBECONFIG}
-                    /tmp/helm rollback ${env.RELEASE_NAME} 0 \
+                    export KUBECONFIG=${WORKSPACE}/kubeconfig.conf
+                    /tmp/helm rollback ${RELEASE_NAME} 0 \
                         --namespace ${params.ENVIRONMENT} \
-                        --wait || echo 'Rollback failed'
+                        --wait || echo 'Rollback failed or no previous release'
                 """
             }
         }
         always {
-            sh "rm -f ${env.CHART_PATH}/tls.crt ${env.CHART_PATH}/tls.key || true"
+            sh "rm -f ${CHART_PATH}/tls.crt ${CHART_PATH}/tls.key || true"
+            sh "rm -f ${WORKSPACE}/kubeconfig.conf || true"
             sh 'podman system prune -f || true'
             cleanWs()
         }
