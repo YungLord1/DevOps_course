@@ -58,6 +58,7 @@ pipeline {
 
                         sh """
                             export KUBECONFIG=${KUBE_CONFIG_FILE}
+                            cat ${KUBE_CONFIG_FILE}
 
                             cp ${TLS_CRT_FILE} ${CHART_PATH}/tls.crt
                             cp ${TLS_KEY_FILE} ${CHART_PATH}/tls.key
