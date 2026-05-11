@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik
+  namespace: kube-system
+  labels:
+    app: traefik
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traefik
+  template:
+    metadata:
+      labels:
+        app: traefik
+    spec:
+      serviceAccountName: traefik-ingress-controller
+      containers:
+      - name: traefik
+        image: traefik:v3.0
+        args:
+          - --log.level=INFO
+          - --api.insecure=true
+          - --api.dashboard=true
+          - --providers.kubernetesingress=true
+          - --providers.kubernetesingress.allowExternalNameServices=true
+          - --entrypoints.web.address=:80
+          - --entrypoints.websecure.address=:443
+          - --providers.kubernetesingress.ingressendpoint.publishedservice=kube-system/traefik
+        ports:
+        - name: web
+          containerPort: 80
+        - name: websecure
+          containerPort: 443
