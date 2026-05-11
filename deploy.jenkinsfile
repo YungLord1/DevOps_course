@@ -5,9 +5,7 @@ pipeline {
     environment {
         DOCKER_HOST = "unix:///run/podman/podman.sock"
         RELEASE_NAME = "currency-app"
-        CHART_PATH   = "helm/currency-app"
-        APP_URL      = "https://chach.industry.com"
-        
+        CHART_PATH = "helm/currency-app"
     }
 
     parameters {
@@ -16,36 +14,56 @@ pipeline {
     }
 
     stages {
-        stage('Install Helm 4 & Deploy') {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Helm') {
+            steps {
+                sh '''
+                    if ! command -v helm &> /dev/null; then
+                        echo "Helm not found, installing to /tmp..."
+                        curl -fsSL -o /tmp/get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+                        chmod 700 /tmp/get_helm.sh
+                        HELM_INSTALL_DIR=/tmp USE_SUDO=false /tmp/get_helm.sh --no-sudo || true
+                        chmod +x /tmp/helm
+                    else
+                        echo "Helm already installed: $(helm version --short)"
+                    fi
+                    /tmp/helm version || helm version
+                '''
+            }
+        }
+
+        stage('Deploy') {
             steps {
                 script {
-                    sh '''
-                        echo "Installing Helm 4 to /tmp..."
-                        curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
-                        chmod 700 get_helm.sh
-                        export HELM_INSTALL_DIR=/tmp
-                        USE_SUDO=false ./get_helm.sh --no-sudo || true
-                        chmod +x /tmp/helm
-                        /tmp/helm version
-                    '''
-
                     withCredentials([
                         file(credentialsId: 'KUBECONFIG', variable: 'KUBE_CONFIG_FILE'),
                         file(credentialsId: 'APP_TLS_CRT', variable: 'TLS_CRT_FILE'),
                         file(credentialsId: 'APP_TLS_KEY', variable: 'TLS_KEY_FILE'),
-                        usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')
+                        usernamePassword(credentialsId: 'dockerhub_creds',
+                                         usernameVariable: 'DOCKER_USER',
+                                         passwordVariable: 'DOCKER_PASS')
                     ]) {
                         env.KUBECONFIG = KUBE_CONFIG_FILE
-                        def cleanTag = params.IMAGE_TAG.contains(':') ? params.IMAGE_TAG.split(':')[-1] : params.IMAGE_TAG
+                        env.DOCKER_USER = DOCKER_USER
+
+                        def cleanTag = params.IMAGE_TAG.contains(':')
+                            ? params.IMAGE_TAG.split(':')[-1]
+                            : params.IMAGE_TAG
                         def repository = "${DOCKER_USER}/currency_app"
 
                         sh """
                             export KUBECONFIG=${KUBE_CONFIG_FILE}
 
-                            cp ${TLS_CRT_FILE} helm/currency-app/tls.crt
-                            cp ${TLS_KEY_FILE} helm/currency-app/tls.key
+                            cp ${TLS_CRT_FILE} ${CHART_PATH}/tls.crt
+                            cp ${TLS_KEY_FILE} ${CHART_PATH}/tls.key
 
-                            kubectl create namespace ${params.ENVIRONMENT} --dry-run=client -o yaml | kubectl apply -f -
+                            kubectl create namespace ${params.ENVIRONMENT} \
+                                --dry-run=client -o yaml | kubectl apply -f -
 
                             kubectl create secret docker-registry regcred \
                                 --docker-server=https://index.docker.io/v1/ \
@@ -54,60 +72,65 @@ pipeline {
                                 --namespace ${params.ENVIRONMENT} \
                                 --dry-run=client -o yaml | kubectl apply -f -
 
-                            echo "Deploying ${repository}:${cleanTag} to ${params.ENVIRONMENT} namespace..."
+                            echo "Deploying ${repository}:${cleanTag} to ${params.ENVIRONMENT}..."
 
-                            /tmp/helm upgrade --install currency-app helm/currency-app \
+                            /tmp/helm upgrade --install ${RELEASE_NAME} ${CHART_PATH} \
                                 --namespace ${params.ENVIRONMENT} \
                                 --set image.repository=${repository} \
                                 --set image.tag=${cleanTag} \
+                                --set namespace=${params.ENVIRONMENT} \
                                 --wait \
                                 --timeout 5m \
-                                --rollback-on-failure
+                                --atomic
                         """
                     }
                 }
             }
         }
 
-        stage('Smoke tests + DAST') {
+        stage('Smoke test') {
             steps {
                 script {
-                    echo "Checking for existing tunnels and cleaning up..."
                     sh "pkill -f 'port-forward svc/myapp-service' || true"
 
-                    echo "Opening tunnel: Jenkins:8001 -> K8s:8000..."
-                    sh "KUBECONFIG=${KUBE_CONFIG_FILE} kubectl port-forward svc/myapp-service 8001:8000 -n staging --address 127.0.0.1 > pf.log 2>&1 & echo \$! > pf.pid"
+                    sh """
+                        KUBECONFIG=${env.KUBECONFIG} kubectl port-forward \
+                            svc/myapp-service 8001:8000 \
+                            -n ${params.ENVIRONMENT} \
+                            --address 127.0.0.1 > pf.log 2>&1 &
+                        echo \$! > pf.pid
+                    """
 
-                    echo "Waiting for port 8001 to open..."
                     sh '''
                         count=0
-                        while [ $count -lt 15 ]; do
-                          if nc -z 127.0.0.1 8001; then
-                            echo "Port 8001 is open!"
-                            break
-                          fi
-                          echo "Waiting for tunnel... ($count)"
-                          sleep 1
-                          count=`expr $count + 1`
+                        while [ $count -lt 20 ]; do
+                            if nc -z 127.0.0.1 8001; then
+                                echo "Port 8001 is open!"
+                                break
+                            fi
+                            echo "Waiting for tunnel... ($count)"
+                            sleep 2
+                            count=`expr $count + 1`
                         done
 
                         if ! nc -z 127.0.0.1 8001; then
-                          echo "ERROR: Tunnel failed to open after 15 seconds. Log:"
-                          cat pf.log
-                          exit 1
+                            echo "ERROR: Tunnel failed. Log:"
+                            cat pf.log
+                            exit 1
                         fi
                     '''
 
                     def localUrl = "http://127.0.0.1:8001"
-                    env.APP_URL = localUrl 
 
                     try {
                         parallel(
                             'Smoke tests': {
                                 sh """
                                     python3 -m venv venv
-                                    ./venv/bin/pip install -r requirements.txt
-                                    APP_URL=${localUrl} ./venv/bin/python3 -m pytest tests/test_currency_app.py --junitxml=smoke_report.xml
+                                    ./venv/bin/pip install -r requirements.txt -q
+                                    APP_URL=${localUrl} ./venv/bin/python3 -m pytest \
+                                        tests/test_currency_app.py \
+                                        --junitxml=smoke_report.xml
                                 """
                             },
                             'DAST': {
@@ -115,10 +138,7 @@ pipeline {
                             }
                         )
                     } finally {
-                        echo "Cleaning up tunnel..."
-                        if (fileExists('pf.pid')) {
-                            sh "kill \$(cat pf.pid) || true"
-                        }
+                        sh "kill \$(cat pf.pid) || true"
                         sh "pkill -f 'port-forward svc/myapp-service' || true"
                     }
                 }
@@ -126,17 +146,18 @@ pipeline {
             post {
                 always {
                     junit allowEmptyResults: true, testResults: 'smoke_report.xml'
-                    archiveArtifacts artifacts: 'smoke_report.xml, zap_report.xml, pf.log', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'smoke_report.xml,zap_report.xml,pf.log',
+                                     allowEmptyArchive: true
                 }
             }
         }
 
-        stage('Manual Approval (Production Only)') {
+        stage('Approve (Production Only)') {
+            when {
+                expression { params.ENVIRONMENT == 'production' }
+            }
             steps {
-                script {
-                    echo "Checking deployment on ${env.APP_URL}"
-                    input message: "Approve?", ok: "Approve"
-                }
+                input message: "Deploy to production. Approve?", ok: "Approve"
             }
         }
     }
@@ -144,13 +165,17 @@ pipeline {
     post {
         failure {
             script {
-                echo "DEPLOYMENT FAILED! Rolling back to previous stable version..."
-                sh "helm rollback ${env.RELEASE_NAME} 0 --namespace ${params.ENVIRONMENT} || echo 'Rollback failed'"
+                echo "DEPLOYMENT FAILED! Rolling back..."
+                sh """
+                    KUBECONFIG=${env.KUBECONFIG} /tmp/helm rollback ${env.RELEASE_NAME} 0 \
+                        --namespace ${params.ENVIRONMENT} \
+                        --wait || echo 'Rollback failed or no previous release'
+                """
             }
         }
         always {
             sh "rm -f ${env.CHART_PATH}/tls.crt ${env.CHART_PATH}/tls.key || true"
-            sh 'podman system prune -f'
+            sh 'podman system prune -f || true'
             cleanWs()
         }
     }
