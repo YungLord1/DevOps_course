@@ -3,7 +3,7 @@
 pipeline {
     agent { label "${params.ENVIRONMENT}" }
     environment {
-        DOCKER_HOST  = "unix:///run/podman/podman.sock"
+        DOCKER_HOST = "unix:///run/podman/podman.sock"
         RELEASE_NAME = "currency-app"
         CHART_PATH = "helm/currency-app"
         KUBECONFIG = "${WORKSPACE}/kubeconfig.conf"
