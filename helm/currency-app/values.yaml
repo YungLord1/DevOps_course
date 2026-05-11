@@ -1,0 +1,29 @@
+namespace: myapp
+replicaCount: 3
+
+image:
+  repository: yunglord1/currency_app
+  tag: "24" 
+service:
+  port: 8000
+  targetPort: 8000
+
+ingress:
+  className: traefik
+  host: chach.industry.com
+  tlsSecretName: chach-tls-secret
+
+metallb:
+  ipRange: "10.184.0.44-10.184.0.45"
+
+installInfrastructure:
+  traefik: true
+  metallb: true
+
+traefik:
+  replicaCount: 1
+  image: "traefik:v3.0"
+  logLevel: "INFO"
+  ports:
+    web: 80
+    websecure: 443

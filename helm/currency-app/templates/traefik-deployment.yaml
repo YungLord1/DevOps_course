@@ -1,0 +1,75 @@
+{{- if .Values.installInfrastructure.traefik }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  replicas: {{ .Values.traefik.replicaCount }}
+  selector:
+    matchLabels:
+      app: traefik
+  template:
+    metadata:
+      labels:
+        app: traefik
+    spec:
+      serviceAccountName: traefik-ingress-controller
+      containers:
+      - name: traefik
+        image: {{ .Values.traefik.image }}
+        args:
+          - --log.level={{ .Values.traefik.logLevel }}
+          - --entrypoints.web.address=:{{ .Values.traefik.ports.web }}
+          - --entrypoints.websecure.address=:{{ .Values.traefik.ports.websecure }}
+          - --providers.kubernetesingress=true
+          - --log.level=DEBUG
+          - --api.insecure=true
+          - --api.dashboard=true
+          - --providers.kubernetesingress=true
+          - --providers.kubernetesingress.allowExternalNameServices=true
+          - --entrypoints.web.address=:80
+          - --entrypoints.websecure.address=:443
+          - --providers.kubernetesingress.ingressendpoint.publishedservice=kube-system/traefik
+        ports:
+        - name: web
+          containerPort: {{ .Values.traefik.ports.web }}
+        - name: websecure
+          containerPort: {{ .Values.traefik.ports.websecure }}
+{{- end }}
+
+{{- if .Values.installInfrastructure.traefik }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  replicas: {{ .Values.traefik.replicaCount }}
+  selector:
+    matchLabels:
+      app: traefik
+  template:
+    metadata:
+      labels:
+        app: traefik
+    spec:
+      serviceAccountName: traefik-ingress-controller
+      containers:
+      - name: traefik
+        image: {{ .Values.traefik.image }}
+        args:
+          - --log.level={{ .Values.traefik.logLevel }}
+          - --entrypoints.web.address=:{{ .Values.traefik.ports.web }}
+          - --entrypoints.websecure.address=:{{ .Values.traefik.ports.websecure }}
+          - --providers.kubernetesingress.ingressendpoint.publishedservice=kube-system/traefik
+          - --api.insecure=true
+          - --api.dashboard=true
+          - --providers.kubernetesingress=true
+          - --providers.kubernetesingress.allowExternalNameServices=true
+        ports:
+        - name: web
+          containerPort: {{ .Values.traefik.ports.web }}
+        - name: websecure
+          containerPort: {{ .Values.traefik.ports.websecure }}
+{{- end }}
