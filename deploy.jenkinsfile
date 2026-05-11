@@ -97,7 +97,9 @@ pipeline {
                     sh "pkill -f 'port-forward svc/myapp-service' || true"
 
                     sh """
-                        export KUBECONFIG=${kubeconfig}
+                        export KUBECONFIG=${env.KUBECONFIG}
+                        echo "KUBECONFIG is: \$KUBECONFIG"
+                        kubectl get pods -n ${params.ENVIRONMENT}
                         kubectl port-forward svc/myapp-service 8001:8000 \
                             -n ${params.ENVIRONMENT} \
                             --address 127.0.0.1 > pf.log 2>&1 &
