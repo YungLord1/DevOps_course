@@ -4,10 +4,10 @@ metadata:
   name: myapp-ingress
   namespace: {{ .Release.Namespace }}
   annotations:
-    kubernetes.io/ingress.class: {{ .Values.ingress.className }}
     traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
+  ingressClassName: {{ .Values.ingress.className }}
   tls:
   - hosts:
     - {{ .Values.ingress.host }}
