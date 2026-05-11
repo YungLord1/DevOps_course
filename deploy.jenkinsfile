@@ -4,6 +4,9 @@ pipeline {
     agent { label "${params.ENVIRONMENT}" }
     environment {
         DOCKER_HOST = "unix:///run/podman/podman.sock"
+        RELEASE_NAME = "currency-app"
+        CHART_PATH   = "./currency-app"
+        APP_URL      = "https://chach.industry.com"
     }
 
     parameters {
@@ -12,7 +15,7 @@ pipeline {
     }
 
     stages {
-        stage('Deploy Green') {
+        stage('Deploy with Helm') {
             steps {
                 script {
                     def isStaging = (params.ENVIRONMENT == 'staging')
@@ -22,20 +25,33 @@ pipeline {
                         checkout scm
 
                         withCredentials([
-                            file(credentialsId: 'ENV_FILE', variable: 'SECRET_FILE_PATH'),
+                            file(credentialsId: 'APP_TLS_CRT', variable: 'TLS_CRT_FILE'),
+                            file(credentialsId: 'APP_TLS_KEY', variable: 'TLS_KEY_FILE'),
                             usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'U', passwordVariable: 'P')
                         ]) {
                             echo "Log Docker Hub as: ${U}"
                             sh "echo ${P} | podman login -u ${U} --password-stdin"
-                            def fullImageName = params.IMAGE_TAG.contains('/') ? 
-                                                params.IMAGE_TAG : 
+
+                            def fullImageName = params.IMAGE_TAG.contains('/') ?
+                                                params.IMAGE_TAG :
                                                 "${U}/currency_app:${params.IMAGE_TAG}"
 
-                            echo "Starting green version: ${fullImageName} on 8001"
+                            sh "cp ${TLS_CRT_FILE} ${env.CHART_PATH}/tls.crt"
+                            sh "cp ${TLS_KEY_FILE} ${env.CHART_PATH}/tls.key"
 
-                            withEnv(["FULL_IMAGE=${fullImageName}", "S_PATH=${SECRET_FILE_PATH}"]) {
-                                sh 'IMAGE_NAME=${FULL_IMAGE} APP_PORT=8001 podman compose -p app-green --env-file ${S_PATH} up -d'
-                            }
+                            echo "Starting Helm upgrade for: ${fullImageName}"
+
+                            def repo = fullImageName.split(':')[0]
+                            def tag = fullImageName.split(':')[1]
+
+                            sh """
+                            helm upgrade --install ${env.RELEASE_NAME} ${env.CHART_PATH} \
+                                --namespace ${params.ENVIRONMENT} \
+                                --create-namespace \
+                                --set image.repository=${repo} \
+                                --set image.tag=${tag} \
+                                --wait --timeout 5m --atomic
+                            """
                         }
                     }
                 }
@@ -45,23 +61,21 @@ pipeline {
         stage('Smoke tests + DAST') {
             steps {
                 script {
-                    echo "Waiting for Green..."
-                    sleep 5
+                    echo "Waiting for pods to be ready..."
                     parallel(
                         'Smoke tests': {
                             stage('Smoke tests') {
-                                echo "Running tests..."
                                 sh '''
                                     python3 -m venv venv
                                     ./venv/bin/pip install -r requirements.txt
                                     ./venv/bin/python3 -m pytest tests/test_currency_app.py --junitxml=smoke_report.xml
                                 '''
-                                sh "curl -f http://localhost:8001/info || exit 1"
+                                sh "curl -f ${env.APP_URL}/info || exit 1"
                             }
                         },
                         'DAST': {
                             stage('DAST') {
-                                testsLint.runDAST("http://localhost:8001")
+                                testsLint.runDAST(env.APP_URL)
                             }
                         }
                     )
@@ -71,42 +85,32 @@ pipeline {
                 always {
                     junit 'smoke_report.xml'
                     archiveArtifacts artifacts: 'smoke_report.xml, zap_report.xml', allowEmptyArchive: true
-                    echo 'Atrifacts collected'
                 }
             }
         }
 
-        stage('Switch Green to Blue') {
+        stage('Manual Approval (Production Only)') {
+            when {
+                expression { params.ENVIRONMENT == 'production' }
+            }
             steps {
                 script {
-                    def fullImageName = params.IMAGE_TAG.contains('/') ?
-                    params.IMAGE_TAG :
-                    "${U}/currency_app:${params.IMAGE_TAG}"
-                    withCredentials([
-                        file(credentialsId: 'ENV_FILE', variable: 'SECRET_FILE_PATH'),
-                        usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'U', passwordVariable: 'P')
-                    ]) {
-                        echo "Stopping old Blue"
-                        sh 'podman compose -p app-blue down || true'
-
-                        echo "Starting new Blue ${fullImageName}"
-                        withEnv(["FULL_IMAGE=${fullImageName}", "S_PATH=${SECRET_FILE_PATH}"]) {
-                            sh 'IMAGE_NAME=${FULL_IMAGE} APP_PORT=8000 podman compose -p app-blue --env-file ${S_PATH} up -d'
-                        }
-
-                        echo "Cleaning green..."
-                        sh 'podman compose -p app-green down || true'
-                    }
+                    echo "Checking deployment on ${env.APP_URL}"
+                    input message: "Does the Production deployment look good?", ok: "Approve"
                 }
             }
         }
     }
+
     post {
         failure {
-            echo "DEPLOYMENT FAILED! Cleaning up green"
-            sh "podman compose -p app-green down || true"
+            script {
+                echo "DEPLOYMENT FAILED! Rolling back to previous stable version..."
+                sh "helm rollback ${env.RELEASE_NAME} 0 --namespace ${params.ENVIRONMENT} || echo 'Rollback failed'"
+            }
         }
         always {
+            sh "rm -f ${env.CHART_PATH}/tls.crt ${env.CHART_PATH}/tls.key || true"
             sh 'podman system prune -f'
             cleanWs()
         }
