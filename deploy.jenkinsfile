@@ -15,44 +15,50 @@ pipeline {
     }
 
     stages {
-        stage('Deploy with Helm') {
+        stage('Install Helm 4 & Deploy') {
             steps {
                 script {
-                    def isStaging = (params.ENVIRONMENT == 'staging')
-                    def currentStage = isStaging ? 'Deploy to Staging' : 'Deploy to Production'
+                    sh '''
+                        if ! command -v helm &> /dev/null; then
+                            echo "Helm not found. Installing Helm 4..."
+                            curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
+                            chmod 700 get_helm.sh
 
-                    conditionalStage(name: currentStage, condition: true) {
-                        checkout scm
+                            export HELM_INSTALL_DIR=$(pwd)
+                            USE_SUDO=false ./get_helm.sh --no-sudo
 
-                        withCredentials([
-                            file(credentialsId: 'APP_TLS_CRT', variable: 'TLS_CRT_FILE'),
-                            file(credentialsId: 'APP_TLS_KEY', variable: 'TLS_KEY_FILE'),
-                            usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'U', passwordVariable: 'P')
-                        ]) {
-                            echo "Log Docker Hub as: ${U}"
-                            sh "echo ${P} | podman login -u ${U} --password-stdin"
+                            mv ./helm ./helm_bin
+                        else
+                            echo "Helm is already here"
+                            cp $(which helm) ./helm_bin
+                        fi
+                    '''
 
-                            def fullImageName = params.IMAGE_TAG.contains('/') ?
-                                                params.IMAGE_TAG :
-                                                "${U}/currency_app:${params.IMAGE_TAG}"
+                    withCredentials([
+                        file(credentialsId: 'APP_TLS_CRT', variable: 'TLS_CRT_FILE'),
+                        file(credentialsId: 'APP_TLS_KEY', variable: 'TLS_KEY_FILE'),
+                        usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'U', passwordVariable: 'P')
+                    ]) {
+                        sh 'cp "${TLS_CRT_FILE}" "${CHART_PATH}/tls.crt"'
+                        sh 'cp "${TLS_KEY_FILE}" "${CHART_PATH}/tls.key"'
 
-                            sh "cp ${TLS_CRT_FILE} ${env.CHART_PATH}/tls.crt"
-                            sh "cp ${TLS_KEY_FILE} ${env.CHART_PATH}/tls.key"
+                        def fullImageName = params.IMAGE_TAG.contains('/') ?
+                                            params.IMAGE_TAG :
+                                            "${U}/currency_app:${params.IMAGE_TAG}"
 
-                            echo "Starting Helm upgrade for: ${fullImageName}"
+                        def repo = fullImageName.split(':')[0]
+                        def tag = fullImageName.split(':')[1]
 
-                            def repo = fullImageName.split(':')[0]
-                            def tag = fullImageName.split(':')[1]
+                        echo "Deploying with Helm 4..."
 
-                            sh """
-                            helm upgrade --install ${env.RELEASE_NAME} ${env.CHART_PATH} \
-                                --namespace ${params.ENVIRONMENT} \
-                                --create-namespace \
-                                --set image.repository=${repo} \
-                                --set image.tag=${tag} \
-                                --wait --timeout 5m --atomic
-                            """
-                        }
+                        sh """
+                        ./helm_bin upgrade --install ${env.RELEASE_NAME} ${env.CHART_PATH} \
+                            --namespace ${params.ENVIRONMENT} \
+                            --create-namespace \
+                            --set image.repository=${repo} \
+                            --set image.tag=${tag} \
+                            --wait --timeout 5m --atomic
+                        """
                     }
                 }
             }
