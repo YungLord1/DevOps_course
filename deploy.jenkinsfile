@@ -18,20 +18,12 @@ pipeline {
         stage('Install Helm 4 & Deploy') {
             steps {
                 script {
+                    echo "Fetching Helm 4..."
                     sh '''
-                        if ! command -v helm &> /dev/null; then
-                            echo "Helm not found. Installing Helm 4..."
-                            curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
-                            chmod 700 get_helm.sh
-
-                            export HELM_INSTALL_DIR=$(pwd)
-                            USE_SUDO=false ./get_helm.sh --no-sudo
-
-                            mv ./helm ./helm_bin
-                        else
-                            echo "Helm is already here"
-                            cp $(which helm) ./helm_bin
-                        fi
+                        curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
+                        chmod 700 get_helm.sh
+                        export HELM_INSTALL_DIR=$(pwd)
+                        USE_SUDO=false ./get_helm.sh --no-sudo || true
                     '''
 
                     withCredentials([
