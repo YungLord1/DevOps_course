@@ -14,7 +14,8 @@ pipeline {
         choice(name: 'ENVIRONMENT', choices: ['staging', 'production'])
     }
 
-    stage('Install Helm 4 & Deploy') {
+    stages {
+        stage('Install Helm 4 & Deploy') {
             steps {
                 script {
                     sh '''
