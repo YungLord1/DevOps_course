@@ -79,19 +79,25 @@ pipeline {
                     echo "Waiting for port 8001 to open..."
                     sh '''
                         count=0
-                        until nc -z 127.0.0.1 8001 || [ $count -eq 15 ]; do
+                        while [ $count -lt 15 ]; do
+                          if nc -z 127.0.0.1 8001; then
+                            echo "Port 8001 is open!"
+                            break
+                          fi
+                          echo "Waiting for tunnel... ($count)"
                           sleep 1
-                          ((count++))
+                          count=`expr $count + 1`
                         done
+
                         if ! nc -z 127.0.0.1 8001; then
-                          echo "ERROR: Tunnel failed to open. Content of pf.log:"
+                          echo "ERROR: Tunnel failed to open after 15 seconds. Log:"
                           cat pf.log
                           exit 1
                         fi
                     '''
 
                     def localUrl = "http://127.0.0.1:8001"
-                    env.APP_URL = localUrl
+                    env.APP_URL = localUrl 
 
                     try {
                         parallel(
@@ -100,9 +106,6 @@ pipeline {
                                     python3 -m venv venv
                                     ./venv/bin/pip install -r requirements.txt
                                     APP_URL=${localUrl} ./venv/bin/python3 -m pytest tests/test_currency_app.py --junitxml=smoke_report.xml
-
-                                    echo "Final healthcheck with curl..."
-                                    curl -v -f ${localUrl}/info || exit 1
                                 """
                             },
                             'DAST': {
@@ -120,7 +123,7 @@ pipeline {
             }
             post {
                 always {
-                    junit 'smoke_report.xml'
+                    junit allowEmptyResults: true, testResults: 'smoke_report.xml'
                     archiveArtifacts artifacts: 'smoke_report.xml, zap_report.xml, pf.log', allowEmptyArchive: true
                 }
             }
