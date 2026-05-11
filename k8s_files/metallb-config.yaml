@@ -15,4 +15,4 @@ metadata:
 spec:
   ipAddressPools:
   - node-pool
-
+  
