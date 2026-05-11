@@ -70,24 +70,32 @@ pipeline {
         stage('Smoke tests + DAST') {
             steps {
                 script {
-                    echo "Waiting for pods to be ready..."
-                    parallel(
-                        'Smoke tests': {
-                            stage('Smoke tests') {
+                    echo "Waiting for pods to be ready and opening tunnel..."
+
+                    sh "kubectl port-forward svc/myapp-service 8001:8000 -n staging > pf.log 2>&1 & echo \$! > pf.pid"
+                    sleep 5
+
+                    env.APP_URL = "http://localhost:8001"
+
+                    try {
+                        parallel(
+                            'Smoke tests': {
                                 sh '''
                                     python3 -m venv venv
                                     ./venv/bin/pip install -r requirements.txt
-                                    ./venv/bin/python3 -m pytest tests/test_currency_app.py --junitxml=smoke_report.xml
+                                    APP_URL=${APP_URL} ./venv/bin/python3 -m pytest tests/test_currency_app.py --junitxml=smoke_report.xml
+
+                                    echo "Checking health with curl..."
+                                    curl -f ${APP_URL}/info || exit 1
                                 '''
-                                sh "curl -f ${env.APP_URL}/info || exit 1"
-                            }
-                        },
-                        'DAST': {
-                            stage('DAST') {
+                            },
+                            'DAST': {
                                 testsLint.runDAST(env.APP_URL)
                             }
-                        }
-                    )
+                        )
+                    } finally {
+                        sh "kill \$(cat pf.pid) || true"
+                    }
                 }
             }
             post {
@@ -99,13 +107,10 @@ pipeline {
         }
 
         stage('Manual Approval (Production Only)') {
-            when {
-                expression { params.ENVIRONMENT == 'production' }
-            }
             steps {
                 script {
                     echo "Checking deployment on ${env.APP_URL}"
-                    input message: "Does the Production deployment look good?", ok: "Approve"
+                    input message: "Approve?", ok: "Approve"
                 }
             }
         }
