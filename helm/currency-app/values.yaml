@@ -1,4 +1,4 @@
-namespace: myapp
+namespace: staging
 replicaCount: 3
 
 image:
