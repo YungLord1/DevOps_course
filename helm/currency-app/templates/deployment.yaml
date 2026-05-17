@@ -8,6 +8,11 @@ spec:
   selector:
     matchLabels:
       app: myapp
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   template:
     metadata:
       labels:
@@ -15,10 +20,6 @@ spec:
     spec:
       imagePullSecrets:
         - name: regcred
-      dnsPolicy: "None"
-      dnsConfig:
-        nameservers:
-          - 8.8.8.8
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -30,9 +31,30 @@ spec:
                   operator: In
                   values:
                   - myapp
-              topologyKey: "kubernetes.io/hostname"
+              topologyKey: kubernetes.io/hostname
       containers:
       - name: myapp-cont
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         ports:
         - containerPort: {{ .Values.service.targetPort }}
+        resources:
+          limits:
+            memory: {{ .Values.resources.limits.memory }}
+            cpu: {{ .Values.resources.limits.cpu }}
+          requests:
+            memory: {{ .Values.resources.requests.memory }}
+            cpu: {{ .Values.resources.requests.cpu }}
+        livenessProbe:
+          httpGet:
+            path: /info
+            port: {{ .Values.service.targetPort }}
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /info
+            port: {{ .Values.service.targetPort }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3

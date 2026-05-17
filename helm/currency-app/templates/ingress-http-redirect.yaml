@@ -1,19 +1,13 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: myapp-ingress
+  name: myapp-ingress-http
   namespace: {{ .Release.Namespace }}
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
-    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.entrypoints: web
     traefik.ingress.kubernetes.io/router.middlewares: {{ .Release.Namespace }}-redirect-https@kubernetescrd
-    cert-manager.io/cluster-issuer: {{ .Values.certManager.clusterIssuer }}
 spec:
   ingressClassName: {{ .Values.ingress.className }}
-  tls:
-  - hosts:
-    - {{ .Values.ingress.host }}
-    secretName: {{ .Values.ingress.tlsSecretName }}
   rules:
   - host: {{ .Values.ingress.host }}
     http:

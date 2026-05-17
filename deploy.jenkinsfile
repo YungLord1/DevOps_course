@@ -41,8 +41,6 @@ pipeline {
                 script {
                     withCredentials([
                         file(credentialsId: 'KUBECONFIG', variable: 'KUBE_CONFIG_FILE'),
-                        file(credentialsId: 'APP_TLS_CRT', variable: 'TLS_CRT_FILE'),
-                        file(credentialsId: 'APP_TLS_KEY', variable: 'TLS_KEY_FILE'),
                         usernamePassword(credentialsId: 'dockerhub_creds',
                                          usernameVariable: 'DOCKER_USER',
                                          passwordVariable: 'DOCKER_PASS')
@@ -57,9 +55,6 @@ pipeline {
 
                         sh """
                             export KUBECONFIG=${WORKSPACE}/kubeconfig.conf
-
-                            cp ${TLS_CRT_FILE} ${CHART_PATH}/tls.crt
-                            cp ${TLS_KEY_FILE} ${CHART_PATH}/tls.key
 
                             kubectl create namespace ${params.ENVIRONMENT} \
                                 --dry-run=client -o yaml | kubectl apply -f -
@@ -175,7 +170,6 @@ pipeline {
             }
         }
         always {
-            sh "rm -f ${CHART_PATH}/tls.crt ${CHART_PATH}/tls.key || true"
             sh "rm -f ${WORKSPACE}/kubeconfig.conf || true"
             sh 'podman system prune -f || true'
             cleanWs()
