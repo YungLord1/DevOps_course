@@ -3,7 +3,7 @@ replicaCount: 3
 
 image:
   repository: yunglord1/currency_app
-  tag: "30"
+  tag: "39"
 
 service:
   port: 8000
