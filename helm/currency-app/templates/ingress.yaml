@@ -7,9 +7,9 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.middlewares: {{ .Release.Namespace }}-redirect-https@kubernetescrd
-    cert-manager.io/cluster-issuer: {{ .Values.certManager.clusterIssuer }}
+    cert-manager.io/cluster-issuer: letsencrypt
 spec:
-  ingressClassName: {{ .Values.ingress.className }}
+  ingressClassName: traefik
   tls:
   - hosts:
     - {{ .Values.ingress.host }}

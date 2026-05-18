@@ -1,10 +1,10 @@
 import requests
 
-base_url = "https://chach-industry.pro/info/currency"
+base_url = "https://localhost:8001/info/currency"
 
 
 def test_info():
-    info_url = "https://chach-industry.pro/info"
+    info_url = "https://localhost:8001/info"
     res = requests.get(info_url)
     answer = res.json()
 
