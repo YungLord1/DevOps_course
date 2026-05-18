@@ -97,7 +97,7 @@ pipeline {
                     sh '''
                         python3 -m venv venv
                         ./venv/bin/pip install -r requirements.txt -q
-                        APP_URL=https://chach-industry.pro ./venv/bin/python3 -m pytest \
+                        APP_URL=http://myapp-service.staging.svc.cluster.local:8000 ./venv/bin/python3 -m pytest \
                             tests/test_currency_app.py \
                             --junitxml=smoke_report.xml
                     '''
