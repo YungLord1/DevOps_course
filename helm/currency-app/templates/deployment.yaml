@@ -56,13 +56,13 @@ spec:
           httpGet:
             path: /info
             port: {{ .Values.service.targetPort }}
-          initialDelaySeconds: 30
+          initialDelaySeconds: 5
           periodSeconds: 15
           failureThreshold: 3
         readinessProbe:
           httpGet:
             path: /info
             port: {{ .Values.service.targetPort }}
-          initialDelaySeconds: 30
+          initialDelaySeconds: 5
           periodSeconds: 10
           failureThreshold: 3
