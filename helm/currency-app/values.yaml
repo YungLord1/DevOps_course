@@ -29,8 +29,8 @@ metallb:
   ipRange: "10.184.0.44-10.184.0.45"
 
 installInfrastructure:
-  traefik: true
-  metallb: true
+  traefik: false
+  metallb: false
 
 traefik:
   replicaCount: 1

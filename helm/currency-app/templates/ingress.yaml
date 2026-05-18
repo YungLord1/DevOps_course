@@ -4,6 +4,7 @@ metadata:
   name: myapp-ingress
   namespace: {{ .Release.Namespace }}
   annotations:
+    kubernetes.io/ingress.class: "traefik"
     traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.middlewares: {{ .Release.Namespace }}-redirect-https@kubernetescrd
