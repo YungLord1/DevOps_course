@@ -20,6 +20,7 @@ spec:
     spec:
       imagePullSecrets:
         - name: regcred
+      dnsPolicy: ClusterFirst
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
