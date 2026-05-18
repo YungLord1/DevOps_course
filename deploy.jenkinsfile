@@ -93,27 +93,6 @@ pipeline {
                         kubectl get pods -n ${params.ENVIRONMENT}
                     """
 
-                    sh '''
-                        count=0
-                        while [ $count -lt 20 ]; do
-                            if nc -z 127.0.0.1 8001; then
-                                echo "Port 8001 is open!"
-                                break
-                            fi
-                            echo "Waiting for tunnel... ($count)"
-                            sleep 2
-                            count=`expr $count + 1`
-                        done
-
-                        if ! nc -z 127.0.0.1 8001; then
-                            echo "ERROR: Tunnel failed. Log:"
-                            cat pf.log
-                            exit 1
-                        fi
-                    '''
-
-                    def localUrl = "http://127.0.0.1:8001"
-
                     try {
                         parallel(
                             'Smoke tests': {
@@ -130,7 +109,6 @@ pipeline {
                             }
                         )
                     } finally {
-                        sh "kill \$(cat pf.pid) || true"
                         sh "pkill -f 'port-forward svc/myapp-service' || true"
                     }
                 }
@@ -138,7 +116,7 @@ pipeline {
             post {
                 always {
                     junit allowEmptyResults: true, testResults: 'smoke_report.xml'
-                    archiveArtifacts artifacts: 'smoke_report.xml,zap_report.xml,pf.log',
+                    archiveArtifacts artifacts: 'smoke_report.xml,zap_report.xml',
                                      allowEmptyArchive: true
                 }
             }
