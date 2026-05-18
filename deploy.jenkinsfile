@@ -93,31 +93,34 @@ pipeline {
                         kubectl get pods -n ${params.ENVIRONMENT}
                     """
 
-                    try {
-                        parallel(
-                            'Smoke tests': {
-                                sh '''
-                                    python3 -m venv venv
-                                    ./venv/bin/pip install -r requirements.txt -q
-                                    APP_URL=https://chach-industry.pro ./venv/bin/python3 -m pytest \
-                                        tests/test_currency_app.py \
-                                        --junitxml=smoke_report.xml
-                                '''
-                            },
-                            'DAST': {
-                                testsLint.runDAST("https://chach-industry.pro/info")
-                            }
-                        )
-                    } finally {
-                        sh "pkill -f 'port-forward svc/myapp-service' || true"
-                    }
+                    echo "Smoke-tests"
+                    sh '''
+                        python3 -m venv venv
+                        ./venv/bin/pip install -r requirements.txt -q
+                        APP_URL=https://chach-industry.pro ./venv/bin/python3 -m pytest \
+                            tests/test_currency_app.py \
+                            --junitxml=smoke_report.xml
+                    '''
                 }
             }
             post {
                 always {
                     junit allowEmptyResults: true, testResults: 'smoke_report.xml'
-                    archiveArtifacts artifacts: 'smoke_report.xml,zap_report.xml',
-                                     allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'smoke_report.xml', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('DAST') {
+            steps {
+                script {
+                    echo "DAST (OWASP ZAP)"
+                    testsLint.runDAST("http://myapp-service.staging.svc.cluster.local:8000/info")
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'zap_report.xml', allowEmptyArchive: true
                 }
             }
         }
