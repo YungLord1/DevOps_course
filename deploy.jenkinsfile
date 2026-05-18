@@ -91,10 +91,6 @@ pipeline {
                         export KUBECONFIG=${WORKSPACE}/kubeconfig.conf
                         echo "Using kubeconfig: \$KUBECONFIG"
                         kubectl get pods -n ${params.ENVIRONMENT}
-                        kubectl port-forward svc/myapp-service 8001:8000 \
-                            -n ${params.ENVIRONMENT} \
-                            --address 127.0.0.1 > pf.log 2>&1 &
-                        echo \$! > pf.pid
                     """
 
                     sh '''
@@ -130,7 +126,7 @@ pipeline {
                                 '''
                             },
                             'DAST': {
-                                testsLint.runDAST(localUrl)
+                                testsLint.runDAST("https://chach-industry.pro/info")
                             }
                         )
                     } finally {
