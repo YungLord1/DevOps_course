@@ -53,6 +53,14 @@ pipeline {
                             : params.IMAGE_TAG
                         def repository = "${DOCKER_USER}/currency_app"
 
+                        def ingressHost = params.ENVIRONMENT == 'production'
+                            ? 'chach-industry.pro'
+                            : 'staging.chach-industry.pro'
+
+                        def tlsSecret = params.ENVIRONMENT == 'production'
+                            ? 'chach-tls-secret'
+                            : 'staging-tls-secret'
+
                         sh """
                             export KUBECONFIG=${WORKSPACE}/kubeconfig.conf
 
@@ -73,6 +81,8 @@ pipeline {
                                 --set image.repository=${repository} \
                                 --set image.tag=${cleanTag} \
                                 --set namespace=${params.ENVIRONMENT} \
+                                --set ingress.host=${ingressHost} \
+                                --set ingress.tlsSecretName=${tlsSecret} \
                                 --wait \
                                 --timeout 5m \
                                 --atomic
