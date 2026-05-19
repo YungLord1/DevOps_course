@@ -1,0 +1,41 @@
+namespace: staging
+replicaCount: 3
+
+image:
+  repository: yunglord1/currency_app
+  tag: "39"
+
+service:
+  port: 8000
+  targetPort: 8000
+
+resources:
+  limits:
+    memory: 256Mi
+    cpu: "500m"
+  requests:
+    memory: 64Mi
+    cpu: "100m"
+
+ingress:
+  className: traefik
+  host: chach-industry.pro
+  tlsSecretName: chach-tls-secret
+
+certManager:
+  clusterIssuer: letsencrypt
+
+metallb:
+  ipRange: "10.184.0.44-10.184.0.45"
+
+installInfrastructure:
+  traefik: false
+  metallb: false
+
+traefik:
+  replicaCount: 1
+  image: "traefik:v3.0"
+  logLevel: "INFO"
+  ports:
+    web: 80
+    websecure: 443

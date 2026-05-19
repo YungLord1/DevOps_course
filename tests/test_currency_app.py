@@ -1,10 +1,13 @@
+import os
 import requests
 
-base_url = "http://localhost:8001/info/currency"
+APP_URL = os.environ.get("APP_URL", "http://localhost:8001").rstrip("/")
+
+base_url = f"{APP_URL}/info/currency"
 
 
 def test_info():
-    info_url = "http://localhost:8001/info"
+    info_url = f"{APP_URL}/info"
     res = requests.get(info_url)
     answer = res.json()
 
