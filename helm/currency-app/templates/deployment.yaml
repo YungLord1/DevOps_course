@@ -20,7 +20,16 @@ spec:
     spec:
       imagePullSecrets:
         - name: regcred
-      dnsPolicy: ClusterFirst
+      dnsPolicy: "None"
+      dnsConfig:
+        nameservers:
+          - 8.8.8.8
+          - 1.1.1.1
+          - 10.96.0.10
+        searches:
+          - staging.svc.cluster.local
+          - svc.cluster.local
+          - cluster.local
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
