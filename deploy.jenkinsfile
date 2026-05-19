@@ -3,7 +3,10 @@
 pipeline {
     agent { label "${params.ENVIRONMENT}" }
     environment {
-        DOCKER_HOST = "unix:///run/podman/podman.sock"
+        DOCKER_HOST = "unix:///var/run/docker.sock"
+        RELEASE_NAME = "currency-app"
+        CHART_PATH = "helm/currency-app"
+        KUBECONFIG = "${WORKSPACE}/kubeconfig.conf"
     }
 
     parameters {
@@ -12,102 +15,143 @@ pipeline {
     }
 
     stages {
-        stage('Deploy Green') {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Helm') {
+            steps {
+                sh '''
+                    if ! /tmp/helm version &> /dev/null; then
+                        echo "Installing Helm to /tmp..."
+                        curl -fsSL -o /tmp/get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+                        chmod 700 /tmp/get_helm.sh
+                        HELM_INSTALL_DIR=/tmp USE_SUDO=false /tmp/get_helm.sh --no-sudo || true
+                        chmod +x /tmp/helm
+                    fi
+                    /tmp/helm version
+                '''
+            }
+        }
+
+        stage('Deploy') {
             steps {
                 script {
-                    def isStaging = (params.ENVIRONMENT == 'staging')
-                    def currentStage = isStaging ? 'Deploy to Staging' : 'Deploy to Production'
+                    withCredentials([
+                        file(credentialsId: 'KUBECONFIG', variable: 'KUBE_CONFIG_FILE'),
+                        usernamePassword(credentialsId: 'dockerhub_creds',
+                                         usernameVariable: 'DOCKER_USER',
+                                         passwordVariable: 'DOCKER_PASS')
+                    ]) {
+                        sh "cp ${KUBE_CONFIG_FILE} ${WORKSPACE}/kubeconfig.conf"
+                        sh "chmod 600 ${WORKSPACE}/kubeconfig.conf"
 
-                    conditionalStage(name: currentStage, condition: true) {
-                        checkout scm
+                        def cleanTag = params.IMAGE_TAG.contains(':')
+                            ? params.IMAGE_TAG.split(':')[-1]
+                            : params.IMAGE_TAG
+                        def repository = "${DOCKER_USER}/currency_app"
 
-                        withCredentials([
-                            file(credentialsId: 'ENV_FILE', variable: 'SECRET_FILE_PATH'),
-                            usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'U', passwordVariable: 'P')
-                        ]) {
-                            echo "Log Docker Hub as: ${U}"
-                            sh "echo ${P} | podman login -u ${U} --password-stdin"
-                            def fullImageName = params.IMAGE_TAG.contains('/') ? 
-                                                params.IMAGE_TAG : 
-                                                "${U}/currency_app:${params.IMAGE_TAG}"
+                        sh """
+                            export KUBECONFIG=${WORKSPACE}/kubeconfig.conf
 
-                            echo "Starting green version: ${fullImageName} on 8001"
+                            kubectl create namespace ${params.ENVIRONMENT} \
+                                --dry-run=client -o yaml | kubectl apply -f -
 
-                            withEnv(["FULL_IMAGE=${fullImageName}", "S_PATH=${SECRET_FILE_PATH}"]) {
-                                sh 'IMAGE_NAME=${FULL_IMAGE} APP_PORT=8001 podman compose -p app-green --env-file ${S_PATH} up -d'
-                            }
-                        }
+                            kubectl create secret docker-registry regcred \
+                                --docker-server=https://index.docker.io/v1/ \
+                                --docker-username=${DOCKER_USER} \
+                                --docker-password=${DOCKER_PASS} \
+                                --namespace ${params.ENVIRONMENT} \
+                                --dry-run=client -o yaml | kubectl apply -f -
+
+                            echo "Deploying ${repository}:${cleanTag} to ${params.ENVIRONMENT}..."
+
+                            /tmp/helm upgrade --install ${RELEASE_NAME} ${CHART_PATH} \
+                                --namespace ${params.ENVIRONMENT} \
+                                --set image.repository=${repository} \
+                                --set image.tag=${cleanTag} \
+                                --set namespace=${params.ENVIRONMENT} \
+                                --wait \
+                                --timeout 5m \
+                                --atomic
+                        """
                     }
                 }
             }
         }
 
-        stage('Smoke tests + DAST') {
+        stage('Smoke test') {
             steps {
                 script {
-                    echo "Waiting for Green..."
-                    sleep 5
-                    parallel(
-                        'Smoke tests': {
-                            stage('Smoke tests') {
-                                echo "Running tests..."
-                                sh '''
-                                    python3 -m venv venv
-                                    ./venv/bin/pip install -r requirements.txt
-                                    ./venv/bin/python3 -m pytest tests/test_currency_app.py --junitxml=smoke_report.xml
-                                '''
-                                sh "curl -f http://localhost:8001/info || exit 1"
-                            }
-                        },
-                        'DAST': {
-                            stage('DAST') {
-                                testsLint.runDAST("http://localhost:8001")
-                            }
-                        }
-                    )
+                    sh "pkill -f 'port-forward svc/myapp-service' || true"
+
+                    sh """
+                        export KUBECONFIG=${WORKSPACE}/kubeconfig.conf
+                        echo "Using kubeconfig: \$KUBECONFIG"
+                        kubectl get pods -n ${params.ENVIRONMENT}
+                    """
+
+                    echo "Smoke-tests"
+                    sh '''
+                        python3 -m venv venv
+                        ./venv/bin/pip install -r requirements.txt -q
+                        APP_URL=https://chach-industry.pro ./venv/bin/python3 -u -m pytest \
+                            -p no:asyncio \
+                            -vv \
+                            -s \
+                            tests/test_currency_app.py \
+                            --junitxml=smoke_report.xml
+                    '''
                 }
             }
             post {
                 always {
-                    junit 'smoke_report.xml'
-                    archiveArtifacts artifacts: 'smoke_report.xml, zap_report.xml', allowEmptyArchive: true
-                    echo 'Atrifacts collected'
+                    junit allowEmptyResults: true, testResults: 'smoke_report.xml'
+                    archiveArtifacts artifacts: 'smoke_report.xml', allowEmptyArchive: true
                 }
             }
         }
 
-        stage('Switch Green to Blue') {
+        stage('DAST') {
             steps {
                 script {
-                    def fullImageName = params.IMAGE_TAG.contains('/') ?
-                    params.IMAGE_TAG :
-                    "${U}/currency_app:${params.IMAGE_TAG}"
-                    withCredentials([
-                        file(credentialsId: 'ENV_FILE', variable: 'SECRET_FILE_PATH'),
-                        usernamePassword(credentialsId: 'dockerhub_creds', usernameVariable: 'U', passwordVariable: 'P')
-                    ]) {
-                        echo "Stopping old Blue"
-                        sh 'podman compose -p app-blue down || true'
-
-                        echo "Starting new Blue ${fullImageName}"
-                        withEnv(["FULL_IMAGE=${fullImageName}", "S_PATH=${SECRET_FILE_PATH}"]) {
-                            sh 'IMAGE_NAME=${FULL_IMAGE} APP_PORT=8000 podman compose -p app-blue --env-file ${S_PATH} up -d'
-                        }
-
-                        echo "Cleaning green..."
-                        sh 'podman compose -p app-green down || true'
-                    }
+                    echo "DAST (OWASP ZAP)"
+                    testsLint.runDAST("http://myapp-service.staging.svc.cluster.local:8000/info")
                 }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'zap_report.xml', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('Approve (Production Only)') {
+            when {
+                expression { params.ENVIRONMENT == 'production' }
+            }
+            steps {
+                input message: "Deploy to production. Approve?", ok: "Approve"
             }
         }
     }
+
     post {
         failure {
-            echo "DEPLOYMENT FAILED! Cleaning up green"
-            sh "podman compose -p app-green down || true"
+            script {
+                sh """
+                    export KUBECONFIG=${WORKSPACE}/kubeconfig.conf
+                    /tmp/helm rollback ${RELEASE_NAME} 0 \
+                        --namespace ${params.ENVIRONMENT} \
+                        --wait || echo 'Rollback failed or no previous release'
+                """
+            }
         }
         always {
-            sh 'podman system prune -f'
+            sh "rm -f ${WORKSPACE}/kubeconfig.conf || true"
+            sh 'podman system prune -f || true'
             cleanWs()
         }
     }

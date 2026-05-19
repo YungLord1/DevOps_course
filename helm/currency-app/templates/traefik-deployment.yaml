@@ -1,0 +1,39 @@
+{{- if .Values.installInfrastructure.traefik }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik
+  namespace: kube-system
+  labels:
+    app: traefik
+spec:
+  replicas: {{ .Values.traefik.replicaCount }}
+  selector:
+    matchLabels:
+      app: traefik
+  template:
+    metadata:
+      labels:
+        app: traefik
+    spec:
+      serviceAccountName: traefik-ingress-controller
+      containers:
+      - name: traefik
+        image: {{ .Values.traefik.image }}
+        args:
+          - --log.level={{ .Values.traefik.logLevel }}
+          - --api.insecure=true
+          - --api.dashboard=true
+          - --providers.kubernetesingress=true
+          - --providers.kubernetesingress.allowExternalNameServices=true
+          - --providers.kubernetescrd=true
+          - --entrypoints.web.address=:{{ .Values.traefik.ports.web }}
+          - --entrypoints.websecure.address=:{{ .Values.traefik.ports.websecure }}
+          - --entrypoints.websecure.http.tls=true
+          - --providers.kubernetesingress.ingressendpoint.publishedservice=kube-system/traefik
+        ports:
+        - name: web
+          containerPort: {{ .Values.traefik.ports.web }}
+        - name: websecure
+          containerPort: {{ .Values.traefik.ports.websecure }}
+{{- end }}

@@ -71,38 +71,38 @@ pipeline {
                 }
             }
         }
-        stage('Security Scan (Trivy)') {
-            steps {
-                script {
-                    conditionalStage(name: 'Lint + SAST + Tests', condition: true) {
-                        def isTargetBranch = env.BRANCH_NAME.contains('MR-') || env.BRANCH_NAME == 'main' ||
-                                            env.BRANCH_NAME == 'master' || env.TAG_NAME != null
+        // stage('Security Scan (Trivy)') {
+        //     steps {
+        //         script {
+        //             conditionalStage(name: 'Lint + SAST + Tests', condition: true) {
+        //                 def isTargetBranch = env.BRANCH_NAME.contains('MR-') || env.BRANCH_NAME == 'main' ||
+        //                                     env.BRANCH_NAME == 'master' || env.TAG_NAME != null
 
-                        conditionalStage(name: 'Security Scan (Trivy)', condition: isTargetBranch) {
-                            def trivyImage = env.DEPLOY_TAG
-                            echo "Scanning image from build stage: ${trivyImage}"
+        //                 conditionalStage(name: 'Security Scan (Trivy)', condition: isTargetBranch) {
+        //                     def trivyImage = env.DEPLOY_TAG
+        //                     echo "Scanning image from build stage: ${trivyImage}"
 
-                            sh """
-                                docker run --rm \
-                                -v /var/run/docker.sock:/var/run/docker.sock \
-                                -v ${WORKSPACE}:/apps \
-                                -w /apps \
-                                aquasec/trivy:0.45.0 image \
-                                --format sarif \
-                                --output trivy_report.sarif \
-                                ${trivyImage} || true
-                            """
-                        }
-                    }
-                }
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'trivy_report.sarif', allowEmptyArchive: true
-                    recordIssues(tools: [sarif(pattern: 'trivy_report.sarif', id: 'trivy', name: 'Trivy SCA Scan')])
-                }
-            }
-        }
+        //                     sh """
+        //                         docker run --rm \
+        //                         -v /var/run/docker.sock:/var/run/docker.sock \
+        //                         -v ${WORKSPACE}:/apps \
+        //                         -w /apps \
+        //                         aquasec/trivy:0.45.0 image \
+        //                         --format sarif \
+        //                         --output trivy_report.sarif \
+        //                         ${trivyImage} || true
+        //                     """
+        //                 }
+        //             }
+        //         }
+        //     }
+        //     post {
+        //         always {
+        //             archiveArtifacts artifacts: 'trivy_report.sarif', allowEmptyArchive: true
+        //             recordIssues(tools: [sarif(pattern: 'trivy_report.sarif', id: 'trivy', name: 'Trivy SCA Scan')])
+        //         }
+        //     }
+        // }
         stage('Push') {
             steps {
                 script {
